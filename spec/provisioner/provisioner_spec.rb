@@ -28,89 +28,77 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       allow(machine).to receive(:communicate).and_return(communicator)
       allow(communicator).to receive(:shell).and_return(shell)
       allow(shell).to receive(:powershell).with("$env:COMPUTERNAME").and_yield(:stdout, "myoldcomputername")      
+      allow(root_config).to receive(:vm).and_return(vm)
+      allow(vm).to receive(:communicator).and_return(:winrm)
       root_config.finalize!
       root_config.validate(machine)
     end
 
     it "should confirm if the OS is Windows" do
-      allow(root_config).to receive(:vm).and_return(vm)
-      allow(vm).to receive(:communicator).and_return(:winrm)
       allow(communicator).to receive(:sudo).twice
       expect(subject.windows?).to eq(true)
-
       subject.configure(root_config)
     end
 
-    it "should fail if the detected OS is not Windows" do
-      allow(root_config).to receive(:vm).and_return(vm)
+    it "should error if the detected OS is not Windows" do
       allow(vm).to receive(:communicator).and_return(:ssh)
-
       expect { subject.configure(root_config) }.to raise_error("Unsupported platform detected. Vagrant Windows Domain only works on Windows guest environments.")
-      
+    end
+
+    it "should verify the guest has the required powershell cmdlets/capabilities" do
+      expect(communicator).to receive(:sudo).with("which Add-Computer", {:error_class=>VagrantPlugins::WindowsDomain::WindowsDomainError, :error_key=>:binary_not_detected, :domain=>nil, :binary=>"Add-Computer"})
+      expect(communicator).to receive(:sudo).with("which Remove-Computer", {:error_class=>VagrantPlugins::WindowsDomain::WindowsDomainError, :error_key=>:binary_not_detected, :domain=>nil, :binary=>"Remove-Computer"})
+      subject.configure(root_config)
+    end
+  end
+
+  describe "provision" do
+
+    # before do
+    #   # allow(root_config).to receive(:vm).and_return(vm)
+    #   allow(machine).to receive(:root_config).and_return(root_config)
+    #   allow(machine).to receive(:env).and_return(env)
+    #   root_config.finalize!
+    #   root_config.validate(machine)
+    #   subject.configure(root_config)
+    #   machine.stub(config: root_config, env: env, communicate: communicator, guest: guest)
+    # end
+
+    it "should join the domain" do
+
+    end
+
+    it "should restart the machine on a successful domain join" do
+
+    end
+
+    it "should not attempt to join the domain if already on it" do
+
+    end
+
+    it "should authenticate with credentials if provided" do
+
+    end
+
+    it "should prompt for credentials if not provided" do
+    
+    end
+
+    it "should remove any traces of credentials once provisioning has occurred" do
+
     end
 
   end
 
+  describe "cleanup" do
 
-#   describe "provision" do
+    it "should leave domain when a `vagrant destroy` is issued" do
 
-#     before do
-#       # allow(root_config).to receive(:vm).and_return(vm)
-#       allow(machine).to receive(:root_config).and_return(root_config)
-#       allow(machine).to receive(:env).and_return(env)
-#       root_config.finalize!
-#       root_config.validate(machine)
-#       subject.configure(root_config)
-#       machine.stub(config: root_config, env: env, communicate: communicator, guest: guest)
-#     end
+    end
 
-#     it "should restart the machine on a successful domain join" do
+  end
 
-#     end
-
-#     it "should not attempt to join the domain if already on it" do
-
-#     end
-
-#     it "should authenticate with credentials if provided" do
-
-#     end
-
-#     it "should prompt for credentials if not provided" do
-    
-#     end
-
-#     it "should verify DSC binary exists" do
-#       expect(communicator).to receive(:sudo).with("which Start-DscConfiguration", {:error_class=>VagrantPlugins::DSC::WindowsDomainError, :error_key=>:dsc_not_detected, :binary=>"Start-DscConfiguration"})
-#       subject.verify_binary("Start-DscConfiguration")
-#     end
-
-#     it "should verify DSC and Powershell versions are valid" do
-#       expect(communicator).to receive(:test).with("(($PSVersionTable | ConvertTo-json | ConvertFrom-Json).PSVersion.Major) -ge 4", {:error_class=>VagrantPlugins::DSC::WindowsDomainError, :error_key=>:dsc_incorrect_PowerShell_version}).and_return(true)
-#       allow(subject).to receive(:verify_binary).and_return(true)
-#       subject.verify_dsc
-#     end
-
-#     it "should raise an error if DSC version is invalid" do
-#       # shell = double("WinRMShell")
-#       # allow(communicator).to receive(:shell).and_return(shell)
-#       # allow(communicator).to receive(:create_shell).and_return(shell)
-
-#       # TODO: Create an actual Communicator object and mock out methods/calls to isolate this behaviour better
-#       expect(communicator).to receive(:test).with("(($PSVersionTable | ConvertTo-json | ConvertFrom-Json).PSVersion.Major) -ge 4", {:error_class=>VagrantPlugins::DSC::WindowsDomainError, :error_key=>:dsc_incorrect_PowerShell_version})
-#       allow(subject).to receive(:verify_binary).and_return(true)
-#       # expect { subject.verify_dsc }.to raise_error("Unable to detect a working DSC environment. Please ensure powershell v4+ is installed, including WMF 4+.")
-#       subject.verify_dsc
-#     end
-
-#     it "should raise an error if Powershell version is invalid" do
-
-#     end
-
-
-#   end
-
-#   describe "Powershell runner script" do
+  # describe "Powershell runner script" do
 #     before do
 #       # Prevent counters messing with output in tests
 #       Vagrant::Util::Counter.class_eval do
