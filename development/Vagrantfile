@@ -2,88 +2,63 @@
 # vi: set ft=ruby :
 
 $shell_script = <<SCRIPT
-
+  Write-Host "Hey, this happened after the restart!"
 SCRIPT
 
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  # All Vagrant configuration is done here. The most common configuration
-  # options are documented and commented below. For a complete reference,
-  # please see the online documentation at vagrantup.com.
-
-  # Every Vagrant virtual environment requires a box to build off of.
-  # config.vm.box = "mfellows/windows2012r2"
-  config.vm.box = "windows2012r2"
-
+  
+  config.vm.box = "mfellows/windows2012r2"
   config.vm.guest = :windows
   config.vm.communicator = "winrm"
-
   config.vm.network :forwarded_port, guest: 5985, host: 5985, id: "winrm", auto_correct: true
-  config.vm.network :forwarded_port, guest: 80,   host: 8000, id: "web" # Port forward for IIS
-  config.vm.network :forwarded_port, guest: 443, host: 8443,  id: "ssl" # Port forward for SSL IIS
-  config.vm.network :forwarded_port, guest: 22, host: 9222,  id: "ssh" # Port forward for SSL IIS
 
-  # config.vm.provider "virtualbox" do |v|
-  #   v.gui = true
-  # end
-
-  # Install Chocolatey and some basic DSC Resources
-  config.vm.provision "shell", inline: $shell_script
-
-  # config.vm.provision "windows-domain", 
-  #   domain: "seek.int", 
-  #   principal: "foo"
-
-  # Run DSC
+  # Run Windows Domain Provisioner
   config.vm.provision :windows_domain do |domain|
 
-
-    # Set of module paths relative to the Vagrantfile dir.
+    # The Windows Domain to join.
     #
-    # These paths are added to the DSC Configuration running
-    # environment to enable local modules to be addressed.
+    # Setting this will result in an additional restart.
+    domain.domain = "domain.int"
+
+    # The new Computer Name to use when joining the domain.
     #
-    # @return [Array] Set of relative module paths.
-    # domain.module_path = ["modules"]
+    # Uses the Rename-Computer PowerShell command. ORRRR -NewName flag??
+    # Specifies a new name for the computer in the new domain.
+    domain.computer_name "myfandangledname"
 
-
-    # The domain to connect the box to
-    domain.domain = "seek.int"
-    domain.username = "seek\\mfellows"
-    # domain.password = "seek"
-
-    # The path relative to `domain.manifests_path` pointing to the Configuration file
-    # domain.configuration_file  = "MyWebsite.ps1"
-
-    # The Configuration Command to run. Assumed to be the same as the `domain.configuration_file`
-    # (sans extension) if not provided.
-    # domain.configuration_name = "MyWebsite"
-
-    # Commandline arguments to the Configuration run
-    # Set of Parameters to pass to the DSC Configuration.
-
-    # Relative path to a pre-generated MOF file.
+    # The Username to use when authenticating against the Domain.
     #
-    # Path is relative to the folder containing the Vagrantfile.
-    # domain.mof_path = "mof"
+    # Specifies a user account that has permission to join the computers to a new domain. 
+    domain.username = "me"
 
-    # Relative path to the folder containing the root Configuration manifest file.
-    # Defaults to 'manifests'.
+    # The Password to use when authenticating against the Domain.
     #
-    # Path is relative to the folder containing the Vagrantfile.
-    # domain.manifests_path = "manifests"
-    # domain.configuration_params = {"-MachineName" => "localhost"}
+    # Specifies the password of a user account that has permission to 
+    # join the computers to a new domain. 
+    domain.password = "iprobablyshouldntusethisfield"
 
-    # The type of synced folders to use when sharing the data
-    # required for the provisioner to work properly.
+    # The set of Advanced options to pass when joining the Domain.
     #
-    # By default this will use the default synced folder type.
-    # For example, you can set this to "nfs" to use NFS synced folders.
-    # domain.synced_folder_type = ""
+    # See (https://technet.microsoft.com/en-us/library/hh849798.aspx) for detail.
+    # NOTE: If we user :computer_name from above this needs to be merged!!
+    domain.join_options
 
-    # Temporary working directory on the guest machine.
-    # domain.temp_dir = "c:/tmp/vagrant-windows-domain"
+    # Organisational Unit path in AD.
+    #
+    # Specifies an organizational unit (OU) for the domain account. 
+    # Enter the full distinguished name of the OU in quotation marks. 
+    # The default value is the default OU for machine objects in the domain.
+    domain.ou_path
+
+    # Performs an unsecure join to the specified domain.
+    #
+    # When this option is used username/password are not required
+    domain.unsecure
   end
+
+  # Confirm that this will run after the reload from the domain provisioner!
+  config.vm.provision "shell", inline: $shell_script  
 end

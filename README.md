@@ -1,11 +1,14 @@
 # Vagrant Windows Domain Plugin
 
-[![Build Status](https://travis-ci.org/mefellows/vagrant-windows-domain.svg)](https://travis-ci.org/mefellows/vagrant-windows-domain)
-[![Coverage Status](https://coveralls.io/repos/mefellows/vagrant-windows-domain/badge.png?branch=master)](https://coveralls.io/r/mefellows/vagrant-windows-domain?branch=master)
+[![Build Status](https://travis-ci.org/SEEK-Jobs/vagrant-windows-domain.svg)](https://travis-ci.org/SEEK-Jobs/vagrant-windows-domain)
+[![Coverage Status](https://coveralls.io/repos/SEEK-Jobs/vagrant-windows-domain/badge.svg?branch=master)](https://coveralls.io/r/SEEK-Jobs/vagrant-windows-domain?branch=master)
 [![Gem Version](https://badge.fury.io/rb/vagrant-windows-domain.svg)](http://badge.fury.io/rb/vagrant-windows-domain)
 
-Connects your Windows Vagrant box to a Windows Domain, including removing upon a `vagrant destroy`.
+A Vagrant Plugin that makes connecting and disconnecting your Windows Vagrant box to a Windows Domain a cinch.
 
+On a `vagrant up` - unless credentials are supplied - it will prompt the user for their domain credentials and add the guest to the domain, including restarting the guest without interfering with other provisioners. 
+
+On a `vagrant destroy`, it will do the same and remove itself from the Domain, keeping things neat-n-tidy.
 
 ## Installation
 
@@ -16,76 +19,60 @@ Connects your Windows Vagrant box to a Windows Domain, including removing upon a
 In your Vagrantfile, add the following plugin and configure to your needs:
 
 ```ruby
-  config.vm.provision "dsc" do |dsc|
-    # The path relative to `dsc.manifests_path` pointing to the Configuration file
-    dsc.configuration_file  = "MyWebsite.ps1"
+config.vm.provision :windows_domain do |domain|
 
-    # The Configuration Command to run. Assumed to be the same as the `dsc.configuration_file`
-    # (sans extension) if not provided.
-    dsc.configuration_name = "MyWebsite"
-
-    # Commandline arguments to the Configuration run
-    # Set of Parameters to pass to the DSC Configuration.
+    # The Windows Domain to join.
     #
-    # To pass in flags, simply set the value to `nil`
-    dsc.configuration_params = {"-MachineName" => "localhost", "-EnableDebug" => nil}
+    # Setting this will result in an additional restart.
+    domain.domain = "domain.int"
 
-    # Relative path to a folder containing a pre-generated MOF file.
+    # The new Computer Name to use when joining the domain.
     #
-    # Path is relative to the folder containing the Vagrantfile.
-    #dsc.mof_path = "mof_output"
+    # Uses the Rename-Computer PowerShell command. ORRRR -NewName flag??
+    # Specifies a new name for the computer in the new domain.
+    domain.computer_name "myfandangledname"
 
-    # Relative path to the folder containing the root Configuration manifest file.
-    # Defaults to 'manifests'.
+    # The Username to use when authenticating against the Domain.
     #
-    # Path is relative to the folder containing the Vagrantfile.
-    # dsc.manifests_path = "manifests"
+    # Specifies a user account that has permission to join the computers to a new domain. 
+    #
+    # If not supplied the plugin will prompt the user during provisioning to provide one.
+    domain.username = "me"
 
-    # Set of module paths relative to the Vagrantfile dir.
+    # The Password to use when authenticating against the Domain.
     #
-    # These paths are added to the DSC Configuration running
-    # environment to enable local modules to be addressed.
+    # Specifies the password of a user account that has permission to 
+    # join the computers to a new domain. 
     #
-    # @return [Array] Set of relative module paths.
-    #dsc.module_path = ["manifests", "modules"]
+    # If not supplied the plugin will prompt the user during provisioning to provide one.
+    domain.password = "iprobablyshouldntusethisfield"
 
-    # The type of synced folders to use when sharing the data
-    # required for the provisioner to work properly.
+    # The set of Advanced options to pass when joining the Domain.
     #
-    # By default this will use the default synced folder type.
-    # For example, you can set this to "nfs" to use NFS synced folders.
-    #dsc.synced_folder_type = ""
+    # See (https://technet.microsoft.com/en-us/library/hh849798.aspx) for detail, these are generally not required.
+    domain.join_options = { "--JoinReadOnly" => "" }
 
-    # Temporary working directory on the guest machine.
-    #dsc.temp_dir = "/tmp/vagrant-windows-domain"
-  end
+    # Organisational Unit path in AD.
+    #
+    # Specifies an organizational unit (OU) for the domain account. 
+    # Enter the full distinguished name of the OU in quotation marks. 
+    # The default value is the default OU for machine objects in the domain.
+    domain.ou_path = "OU=testOU,DC=domain,DC=Domain,DC=com"
+
+    # Performs an unsecure join to the specified domain.
+    #
+    # When this option is enabled username/password are not required and cannot be used.
+    domain.unsecure = false
+end
 ```
 ## Example
 
-There is a [sample](https://github.com/mefellows/vagrant-windows-domain/tree/master/development) Vagrant setup used for development of this plugin. 
+There is a [sample](https://github.com/SEEK-Jobs/vagrant-windows-domain/tree/master/development) Vagrant setup used for development of this plugin. 
 This is a great real-life example to get you on your way.
-
-## Roadmap
-
-* Support DSC Pull Server provisioning
-* Test (dry-run) a DSC Configuration Run with 'vagrant vagrant-windows-domain test'
-* Support for non-Windows environments
 
 ### Supported Environments
 
-Currently the plugin only supports modern Windows environments with DSC installed (Windows 8.1+, Windows Server 2012 R2+ are safe bets).
-The plugin works on older platforms that have a later version of .NET (4.5) and the WMF 4.0 installed.
-
-As a general guide, configuring your Windows Server
-
-From the [DSC Book](https://onedrive.live.com/view.aspx?cid=7F868AA697B937FE&resid=7F868AA697B937FE!156&app=Word):
-
-> **DSC Overview and Requirements**
-> Desired State Configuration (DSC) was first introduced as part of Windows Management Framework (WMF) 4.0, which is preinstalled in Windows 8.1 and Windows Server 2012 R2, and is available for Windows 7, Windows Server 2008 R2, and Windows Server 2012. Because Windows 8.1 is a free upgrade to Windows 8, WMF 4 is not available for Windows 8.
-> You must have WMF 4.0 on a computer if you plan to author configurations there. You must also have WMF 4.0 on any computer you plan to manage via DSC. Every computer involved in the entire DSC conversation must have WMF 4.0 installed. Period. Check $PSVersionTable in PowerShell if you’re not sure what version is installed on a computer.
-> On Windows 8.1 and Windows Server 2012 R2, make certain that KB2883200 is installed or DSC will not work. On Windows Server 2008 R2, Windows 7, and Windows Server 2008, be sure to install the full Microsoft .NET Framework 4.5 package prior to installing WMF 4.0 or DSC may not work correctly.
-
-We may consider automatically installing and configuring DSC in a future release of the plugin.
+Currently the plugin supports any Windows environment with Powershell 3+ installed (2008r2, 2012r2 should work nicely).
 
 ## Uninistallation
 
