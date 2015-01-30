@@ -1,0 +1,89 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+$shell_script = <<SCRIPT
+
+SCRIPT
+
+# Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
+VAGRANTFILE_API_VERSION = "2"
+
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+  # All Vagrant configuration is done here. The most common configuration
+  # options are documented and commented below. For a complete reference,
+  # please see the online documentation at vagrantup.com.
+
+  # Every Vagrant virtual environment requires a box to build off of.
+  # config.vm.box = "mfellows/windows2012r2"
+  config.vm.box = "windows2012r2"
+
+  config.vm.guest = :windows
+  config.vm.communicator = "winrm"
+
+  config.vm.network :forwarded_port, guest: 5985, host: 5985, id: "winrm", auto_correct: true
+  config.vm.network :forwarded_port, guest: 80,   host: 8000, id: "web" # Port forward for IIS
+  config.vm.network :forwarded_port, guest: 443, host: 8443,  id: "ssl" # Port forward for SSL IIS
+  config.vm.network :forwarded_port, guest: 22, host: 9222,  id: "ssh" # Port forward for SSL IIS
+
+  # config.vm.provider "virtualbox" do |v|
+  #   v.gui = true
+  # end
+
+  # Install Chocolatey and some basic DSC Resources
+  config.vm.provision "shell", inline: $shell_script
+
+  # config.vm.provision "windows-domain", 
+  #   domain: "seek.int", 
+  #   principal: "foo"
+
+  # Run DSC
+  config.vm.provision :windows_domain do |domain|
+
+
+    # Set of module paths relative to the Vagrantfile dir.
+    #
+    # These paths are added to the DSC Configuration running
+    # environment to enable local modules to be addressed.
+    #
+    # @return [Array] Set of relative module paths.
+    # domain.module_path = ["modules"]
+
+
+    # The domain to connect the box to
+    domain.domain = "seek.int"
+    domain.username = "seek\\mfellows"
+    # domain.password = "seek"
+
+    # The path relative to `domain.manifests_path` pointing to the Configuration file
+    # domain.configuration_file  = "MyWebsite.ps1"
+
+    # The Configuration Command to run. Assumed to be the same as the `domain.configuration_file`
+    # (sans extension) if not provided.
+    # domain.configuration_name = "MyWebsite"
+
+    # Commandline arguments to the Configuration run
+    # Set of Parameters to pass to the DSC Configuration.
+
+    # Relative path to a pre-generated MOF file.
+    #
+    # Path is relative to the folder containing the Vagrantfile.
+    # domain.mof_path = "mof"
+
+    # Relative path to the folder containing the root Configuration manifest file.
+    # Defaults to 'manifests'.
+    #
+    # Path is relative to the folder containing the Vagrantfile.
+    # domain.manifests_path = "manifests"
+    # domain.configuration_params = {"-MachineName" => "localhost"}
+
+    # The type of synced folders to use when sharing the data
+    # required for the provisioner to work properly.
+    #
+    # By default this will use the default synced folder type.
+    # For example, you can set this to "nfs" to use NFS synced folders.
+    # domain.synced_folder_type = ""
+
+    # Temporary working directory on the guest machine.
+    # domain.temp_dir = "c:/tmp/vagrant-windows-domain"
+  end
+end

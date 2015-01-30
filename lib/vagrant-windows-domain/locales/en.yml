@@ -1,0 +1,17 @@
+en:
+  vagrant_windows_domain:
+    already_status: |-
+      The machine is already %{status}.
+
+    running: |-
+      "Running Windows Domain Provisioner"
+
+    errors:
+      unsupported_platform: |-
+        Unsupported platform detected. Vagrant Windows Domain only works on Windows guest environments.
+      both_credentials_provided: |-
+        You must not supply a "username" and "password" if "unsecure" is set to true.
+      binary_not_detected: |-
+        "The command '%{binary} required to join/remove the guest machine from the domain '%{domain}' was not found on the guest machine"
+      absolute_module_path: |-
+        "Absolute 'module_path' not allowed. Please provide a path relative to your Vagrantfile."
