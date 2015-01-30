@@ -46,10 +46,16 @@ module VagrantPlugins
 
         set_credentials
 
-        join_domain
+        result = join_domain
 
-        restart_guest
+        remove_command_runner_script
+
+        if result
+          restart_guest
+        end
       end
+
+      def 
 
       # Join the guest machine to a Windows Domain.
       #
@@ -66,8 +72,10 @@ module VagrantPlugins
       end
       alias_method :unjoin_domain, :leave_domain
 
+      # Ensure credentials are provided.
+      #
       # Get username/password from user if not provided
-      # as part of the Config object
+      # as part of the config.
       def set_credentials
         if (config.username == nil)
           @logger.info("==> Requesting username as none provided")
@@ -88,7 +96,6 @@ module VagrantPlugins
       def cleanup        
         set_credentials
         leave_domain
-
       end
 
       # Restarts the Computer and waits
@@ -155,7 +162,16 @@ module VagrantPlugins
         guest_script_path
       end
 
+      # Remove temporary run script as it may contain
+      # sensitive plain-text credentials.
+      def remove_command_runner_script
+        @machine.communicate.sudo("del #{WINDOWS_DOMAIN_GUEST_RUNNER_PATH}")
+      end
+
       # Runs the PowerShell script on the guest machine.
+      #
+      # Streams the output of the command to the UI
+      # @return [boolean] The result of the remote command
       def run_remote_command_runner(script_path)
         command = ". '#{script_path}'"
 
@@ -169,16 +185,18 @@ module VagrantPlugins
           shell: :powershell
         }
 
-        @machine.communicate.sudo(command, opts) do |type, data|
+        result = @machine.communicate.sudo(command, opts) do |type, data|
           if !data.chomp.empty?
             if [:stderr, :stdout].include?(type)
               color = type == :stdout ? :green : :red
               @machine.ui.info(
                 data.chomp,
-                color: color, new_line: false, prefix: false)
+                color: color, new_line: false, prefix: false)              
             end
           end
         end
+
+        result
       end
 
       # If on using WinRM, we can assume we are on Windows
