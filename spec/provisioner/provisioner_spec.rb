@@ -45,12 +45,6 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       expect { subject.configure(root_config) }.to raise_error("Unsupported platform detected. Vagrant Windows Domain only works on Windows guest environments.")
     end
 
-    it "should verify the guest has the required powershell cmdlets/capabilities" do
-      expect(communicator).to receive(:sudo).with("which Add-Computer", {:error_class=>VagrantPlugins::WindowsDomain::WindowsDomainError, :error_key=>:binary_not_detected, :domain=>nil, :binary=>"Add-Computer"})
-      expect(communicator).to receive(:sudo).with("which Remove-Computer", {:error_class=>VagrantPlugins::WindowsDomain::WindowsDomainError, :error_key=>:binary_not_detected, :domain=>nil, :binary=>"Remove-Computer"})
-      subject.configure(root_config)
-    end
-
   end
 
   describe "provision" do
@@ -64,8 +58,8 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       allow(shell).to receive(:powershell).with("$env:COMPUTERNAME").and_yield(:stdout, "myoldcomputername")
       allow(root_config).to receive(:vm).and_return(vm)
       allow(vm).to receive(:communicator).and_return(:winrm)
-      expect(communicator).to receive(:sudo).with("which Add-Computer", {:error_class=>VagrantPlugins::WindowsDomain::WindowsDomainError, :error_key=>:binary_not_detected, :domain=>"foo.com", :binary=>"Add-Computer"})
-      expect(communicator).to receive(:sudo).with("which Remove-Computer", {:error_class=>VagrantPlugins::WindowsDomain::WindowsDomainError, :error_key=>:binary_not_detected, :domain=>"foo.com", :binary=>"Remove-Computer"})
+      allow(communicator).to receive(:sudo).with("which Add-Computer", {:error_class=>VagrantPlugins::WindowsDomain::WindowsDomainError, :error_key=>:binary_not_detected, :domain=>"foo.com", :binary=>"Add-Computer"})
+      allow(communicator).to receive(:sudo).with("which Remove-Computer", {:error_class=>VagrantPlugins::WindowsDomain::WindowsDomainError, :error_key=>:binary_not_detected, :domain=>"foo.com", :binary=>"Remove-Computer"})
 
       root_config.domain = "foo.com"
       root_config.username = "username"
@@ -113,7 +107,6 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
 
       it "join with credentials if provided" do
         args = subject.generate_command_arguments
-        puts args
       end
 
       it "not join with credentials if 'unsecure' option provided" do

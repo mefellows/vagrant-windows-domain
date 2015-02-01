@@ -45,12 +45,12 @@ module VagrantPlugins
       # @param [Config] root_config The default configuration from the Vagrant hierarchy.
       def configure(root_config)
         raise WindowsDomainError, :unsupported_platform if !windows?
-
-        verify_guest_capability
       end
 
       # Run the Provisioner!
       def provision
+        verify_guest_capability
+
         @old_computer_name = get_guest_computer_name(machine)
         
         @machine.env.ui.say(:info, "Connecting guest machine to domain '#{config.domain}' with computer name '#{config.computer_name}'")
