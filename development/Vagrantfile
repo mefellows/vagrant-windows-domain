@@ -10,7 +10,7 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
-  config.vm.box = "windows2012r2"
+  config.vm.box = "mfellows/windows2012r2"
   config.vm.guest = :windows
   config.vm.communicator = "winrm"
   config.vm.network :forwarded_port, guest: 5985, host: 5985, id: "winrm", auto_correct: true
