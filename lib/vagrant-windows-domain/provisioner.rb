@@ -178,10 +178,6 @@ module VagrantPlugins
           end
         end
 
-        # ADD with creds: -Credentials $credentials
-        # Add no creds: -Unsecure
-
-        #Remove with creds: -UnjoinDomainCredential $credentials -Verbose -Force
         # Remove with unsecure
         join_params = @config.join_options.map { |a| "#{a}" }.join(',')
         params.map { |k,v| "#{k}" + (!v.nil? ? " #{v}": '') }.join(' ') + join_params
