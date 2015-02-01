@@ -19,6 +19,14 @@ module VagrantPlugins
 
       # Default path for storing the transient script runner
       WINDOWS_DOMAIN_GUEST_RUNNER_PATH = "c:/tmp/vagrant-windows-domain-runner.ps1"
+      
+      attr_accessor :restart_sleep_duration        
+
+      # The current Computer Name.
+      #
+      # Used to determine whether or not we need to rename the computer 
+      # on join. This parameter should not be manually set.
+      attr_accessor :old_computer_name      
 
       # Constructs the Provisioner Plugin.
       #
@@ -29,6 +37,7 @@ module VagrantPlugins
         super
 
         @logger = Log4r::Logger.new("vagrant::provisioners::vagrant_windows_domain")
+        @restart_sleep_duration = 10
       end
 
       # Configures the Provisioner.
@@ -42,6 +51,8 @@ module VagrantPlugins
 
       # Run the Provisioner!
       def provision
+        @old_computer_name = get_guest_computer_name(machine)
+        
         @machine.env.ui.say(:info, "Connecting guest machine to domain '#{config.domain}' with computer name '#{config.computer_name}'")
 
         set_credentials
@@ -54,8 +65,6 @@ module VagrantPlugins
           restart_guest
         end
       end
-
-      def 
 
       # Join the guest machine to a Windows Domain.
       #
@@ -105,7 +114,7 @@ module VagrantPlugins
         options[:provision_ignore_sentinel] = false
         @machine.action(:reload, options)
         begin
-          sleep 10
+          sleep @restart_sleep_duration
         end until @machine.communicate.ready?
       end
 
@@ -138,9 +147,45 @@ module VagrantPlugins
             username: @config.username,
             password: @config.password,
             domain: @config.domain,
-            add_to_domain: add_to_domain
-            # parameters: @config.join_options.map { |k,v| "#{k}" + (!v.nil? ? " \"#{v}\"": '') }.join(" ")
+            add_to_domain: add_to_domain,
+            unsecure: @config.unsecure,
+            parameters: generate_command_arguments(add_to_domain)
         })
+      end
+
+      # Generates the argument list
+      def generate_command_arguments(add_to_domain=true)
+        params = {"-DomainName" => @config.domain }
+
+        if add_to_domain
+
+          if @config.unsecure
+            params["-Unsecure"] = nil
+          else
+            params["-Credential $credentials"] = nil
+          end
+
+          if @config.computer_name != nil && @config.computer_name != @old_computer_name
+            params["-NewName"] = "'#{@config.computer_name}'"
+          end
+
+          if @config.ou_path
+            params["-OUPath"] = "'#{@config.ou_path}'"
+          end
+        else
+          if !@config.unsecure
+            params["-UnjoinDomainCredential $credentials"] = nil
+          end
+        end
+
+        # ADD with creds: -Credentials $credentials
+        # Add no creds: -Unsecure
+
+        #Remove with creds: -UnjoinDomainCredential $credentials -Verbose -Force
+        # Remove with unsecure
+        join_params = @config.join_options.map { |a| "#{a}" }.join(',')
+        params.map { |k,v| "#{k}" + (!v.nil? ? " #{v}": '') }.join(' ') + join_params
+        
       end
 
       # Writes the PowerShell runner script to a location on the guest.
@@ -199,8 +244,25 @@ module VagrantPlugins
         result
       end
 
-      # If on using WinRM, we can assume we are on Windows
+      # Gets the Computer Name from the guest machine
+      def get_guest_computer_name(machine)
+        computerName = ""
+        machine.communicate.shell.powershell("$env:COMPUTERNAME") do |type, data|
+          if !data.chomp.empty?
+            if [:stderr, :stdout].include?(type)
+              color = type == :stdout ? :green : :red
+              computerName = data.chomp
+              @logger.info("Detected guest computer name: #{computerName}")
+            end
+          end
+        end
+
+        computerName
+      end 
+
+      # Is the guest Windows?
       def windows?
+        # If using WinRM, we can assume we are on Windows
         @machine.config.vm.communicator == :winrm
       end
 

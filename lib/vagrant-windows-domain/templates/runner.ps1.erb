@@ -1,9 +1,9 @@
+<% if options[:username] != nil && options[:unsecure] != true %>
 $secpasswd = ConvertTo-SecureString "<%= options[:password] %>" -AsPlainText -Force
 $credentials = New-Object System.Management.Automation.PSCredential ("<%= options[:username] %>", $secpasswd)
-
+<% end %>
 <% if options[:add_to_domain] === true %>
-echo "Add-Computer"
-Add-Computer -DomainName <%= options[:domain] %> -Credential $credentials -Verbose -Force #-WhatIf
+Add-Computer <%= options[:parameters] %> -Verbose -Force
 <% else %>
-Remove-Computer -UnjoinDomainCredential $credentials -Verbose -Force
+Remove-Computer <%= options[:parameters] %> -Verbose -Force
 <% end %>

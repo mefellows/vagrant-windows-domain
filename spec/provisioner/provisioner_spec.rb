@@ -27,7 +27,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       allow(ui).to receive(:say).with(any_args)
       allow(machine).to receive(:communicate).and_return(communicator)
       allow(communicator).to receive(:shell).and_return(shell)
-      allow(shell).to receive(:powershell).with("$env:COMPUTERNAME").and_yield(:stdout, "myoldcomputername")      
+      allow(shell).to receive(:powershell).with("$env:COMPUTERNAME").and_yield(:stdout, "myoldcomputername")
       allow(root_config).to receive(:vm).and_return(vm)
       allow(vm).to receive(:communicator).and_return(:winrm)
       root_config.finalize!
@@ -50,6 +50,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       expect(communicator).to receive(:sudo).with("which Remove-Computer", {:error_class=>VagrantPlugins::WindowsDomain::WindowsDomainError, :error_key=>:binary_not_detected, :domain=>nil, :binary=>"Remove-Computer"})
       subject.configure(root_config)
     end
+
   end
 
   describe "provision" do
@@ -60,7 +61,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       allow(ui).to receive(:say).with(any_args)
       allow(machine).to receive(:communicate).and_return(communicator)
       allow(communicator).to receive(:shell).and_return(shell)
-      allow(shell).to receive(:powershell).with("$env:COMPUTERNAME").and_yield(:stdout, "myoldcomputername")      
+      allow(shell).to receive(:powershell).with("$env:COMPUTERNAME").and_yield(:stdout, "myoldcomputername")
       allow(root_config).to receive(:vm).and_return(vm)
       allow(vm).to receive(:communicator).and_return(:winrm)
       expect(communicator).to receive(:sudo).with("which Add-Computer", {:error_class=>VagrantPlugins::WindowsDomain::WindowsDomainError, :error_key=>:binary_not_detected, :domain=>"foo.com", :binary=>"Add-Computer"})
@@ -76,27 +77,61 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
     end
 
     it "should join the domain" do
-      # subject.provision
+      allow(communicator).to receive(:upload)
+      allow(ui).to receive(:info)
+      expect(communicator).to receive(:sudo).with(". 'c:/tmp/vagrant-windows-domain-runner.ps1'", {:elevated=>true, :error_key=>:ssh_bad_exit_status_muted, :good_exit=>0, :shell=>:powershell}).and_return(true)
+      expect(communicator).to receive(:sudo).with("del c:/tmp/vagrant-windows-domain-runner.ps1")
+      expect(machine).to receive(:action). with(:reload, {:provision_ignore_sentinel=>false})
+      expect(communicator).to receive(:ready?).and_return(true)
+      subject.restart_sleep_duration = 0
+      subject.provision
+      expect(subject.old_computer_name).to eq("myoldcomputername")
     end
 
     it "should restart the machine on a successful domain join" do
-
+      allow(communicator).to receive(:upload)
+      allow(ui).to receive(:info)
+      expect(communicator).to receive(:sudo).with(". 'c:/tmp/vagrant-windows-domain-runner.ps1'", {:elevated=>true, :error_key=>:ssh_bad_exit_status_muted, :good_exit=>0, :shell=>:powershell}).and_return(true)
+      expect(communicator).to receive(:sudo).with("del c:/tmp/vagrant-windows-domain-runner.ps1")
+      expect(machine).to receive(:action). with(:reload, {:provision_ignore_sentinel=>false})
+      expect(communicator).to receive(:ready?).and_return(true)
+      subject.restart_sleep_duration = 0
+      subject.provision
     end
 
     it "should not restart the machine on a failed domain join attempt" do
-
+      allow(communicator).to receive(:upload)
+      allow(ui).to receive(:info)
+      expect(communicator).to receive(:sudo).with(". 'c:/tmp/vagrant-windows-domain-runner.ps1'", {:elevated=>true, :error_key=>:ssh_bad_exit_status_muted, :good_exit=>0, :shell=>:powershell}).and_return(false)
+      expect(communicator).to receive(:sudo).with("del c:/tmp/vagrant-windows-domain-runner.ps1")
+      expect(machine).to_not receive(:action). with(:reload, {:provision_ignore_sentinel=>false})
+      subject.restart_sleep_duration = 0
+      subject.provision
     end
 
-    it "should not attempt to join the domain if already on it" do
+    context "generate_command_arguments" do
 
-    end
+      it "join with credentials if provided" do
+        args = subject.generate_command_arguments
+        puts args
+      end
 
-    it "should authenticate with credentials if provided" do
+      it "not join with credentials if 'unsecure' option provided" do
 
-    end
+      end
 
-    it "should not authenticate at all if 'unsecure' option provided" do
+      it "remove with credentials if provided" do
 
+      end
+
+      it "remove join with credentials if 'unsecure' option provided" do
+
+      end
+
+      it "should rename the computer if the computer name is different" do
+
+      end
+      
     end
 
     it "should prompt for credentials if not provided" do
@@ -120,6 +155,20 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
   end
 
   describe "cleanup" do
+    before do
+      allow(communicator).to receive(:shell).and_return(shell)
+      allow(shell).to receive(:powershell).and_yield(:stdout, "myoldcomputername")
+    end
+
+    it "should leave domain" do
+      allow(machine).to receive(:communicate).and_return(communicator)
+      expect(communicator).to receive(:upload)
+      expect(communicator).to receive(:sudo).with(". 'c:/tmp/vagrant-windows-domain-runner.ps1'", {:elevated=>true, :error_key=>:ssh_bad_exit_status_muted, :good_exit=>0, :shell=>:powershell}).and_return(true)
+      expect(ui).to receive(:info).with(any_args).once
+      
+      result = subject.leave_domain
+      expect(result).to eq(true)
+    end
 
     it "should leave domain when a `vagrant destroy` is issued" do
       allow(machine).to receive(:communicate).and_return(communicator)
@@ -136,8 +185,8 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       allow(machine).to receive(:communicate).and_return(communicator)
       allow(machine).to receive(:env).and_return(env)
       expect(communicator).to receive(:upload)
-      expect(communicator).to receive(:sudo).with(". 'c:/tmp/vagrant-windows-domain-runner.ps1'", {:elevated=>true, :error_key=>:ssh_bad_exit_status_muted, :good_exit=>0, :shell=>:powershell})
-      expect(ui).to receive(:info).with(any_args).once
+      expect(communicator).to receive(:sudo).with(". 'c:/tmp/vagrant-windows-domain-runner.ps1'", {:elevated=>true, :error_key=>:ssh_bad_exit_status_muted, :good_exit=>0, :shell=>:powershell}).and_yield(:stdout, "deleted!")
+      expect(ui).to receive(:info).with(any_args).twice
       expect(ui).to receive(:ask).with("Please enter your domain password (output will be hidden): ", {:echo=>false}).and_return("myusername")
       expect(ui).to receive(:ask).with("Please enter your domain username: ")      
 
@@ -146,100 +195,81 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
 
   end
 
-  # describe "Powershell runner script" do
-#     before do
-#       # Prevent counters messing with output in tests
-#       Vagrant::Util::Counter.class_eval do
-#         def get_and_update_counter(name=nil) 1 end
-#       end
+  describe "Powershell runner script" do
+    before do
+      allow(machine).to receive(:root_config).and_return(root_config)
+      machine.stub(config: root_config, env: env)
+      allow(ui).to receive(:say).with(any_args)
+      allow(machine).to receive(:communicate).and_return(communicator)
+      allow(communicator).to receive(:shell).and_return(shell)
+      allow(shell).to receive(:powershell).with("$env:COMPUTERNAME").and_yield(:stdout, "myoldcomputername")
+      allow(root_config).to receive(:vm).and_return(vm)
+      allow(vm).to receive(:communicator).and_return(:winrm)
+      root_config.domain = "foo.com"
+      root_config.username = "username"
+      root_config.password = "password"
+      root_config.finalize!
+      root_config.validate(machine)
+    end
 
-#       allow(machine).to receive(:root_config).and_return(root_config)
-#       root_config.configuration_file = configuration_file
-#       machine.stub(config: root_config, env: env)
-#       root_config.module_path = module_path
-#       root_config.configuration_file = configuration_file
-#       root_config.finalize!
-#       root_config.validate(machine)
-#       subject.configure(root_config)
+    context "with credentials provided" do
 
-#     end
+      it "should generate a valid powershell command to add the computer to a domain" do
+        script = subject.generate_command_runner_script
+        expect_script = 
+%Q{$secpasswd = ConvertTo-SecureString "password" -AsPlainText -Force
+$credentials = New-Object System.Management.Automation.PSCredential ("username", $secpasswd)
+Add-Computer -DomainName foo.com -Credential $credentials -Verbose -Force
+}
+        expect(script).to eq(expect_script)
+      end
 
-#     context "with default parameters" do
-#       it "should generate a valid powershell command" do
-#         script = subject.generate_dsc_runner_script
-#         expect_script = "#
-# # DSC Runner.
-# #
-# # Bootstraps the DSC environment, sets up configuration data
-# # and runs the DSC Configuration.
-# #
-# #
+      it "should generate a valid powershell command to remove the computer from a domain" do
+        script = subject.generate_command_runner_script(false)
+        expect_script = 
+%Q{$secpasswd = ConvertTo-SecureString "password" -AsPlainText -Force
+$credentials = New-Object System.Management.Automation.PSCredential ("username", $secpasswd)
+Remove-Computer -DomainName foo.com -UnjoinDomainCredential $credentials -Verbose -Force
+}
+        expect(script).to eq(expect_script)
+      end
 
-# # Set the local PowerShell Module environment path
-# $absoluteModulePaths = [string]::Join(\";\", (\"/tmp/vagrant-windows-domain-1/modules-0;/tmp/vagrant-windows-domain-1/modules-1\".Split(\";\") | ForEach-Object { $_ | Resolve-Path }))
+      context "with join options" do
+        it "should rename the computer on join" do
+          
+          root_config.computer_name = "mynewcomputername"
+          root_config.ou_path = "OU=testOU,DC=domain,DC=Domain,DC=com"
+          root_config.finalize!
+          root_config.validate(machine)
 
-# echo \"Adding to path: $absoluteModulePaths\"
-# $env:PSModulePath=\"$absoluteModulePaths;${env:PSModulePath}\"
-# (\"/tmp/vagrant-windows-domain-1/modules-0;/tmp/vagrant-windows-domain-1/modules-1\".Split(\";\") | ForEach-Object { gci -Recurse  $_ | ForEach-Object { Unblock-File  $_.FullName} })
+          script = subject.generate_command_runner_script
+          expect_script = 
+%Q{$secpasswd = ConvertTo-SecureString "password" -AsPlainText -Force
+$credentials = New-Object System.Management.Automation.PSCredential ("username", $secpasswd)
+Add-Computer -DomainName foo.com -Credential $credentials -NewName 'mynewcomputername' -OUPath 'OU=testOU,DC=domain,DC=Domain,DC=com' -Verbose -Force
+}
+          expect(script).to eq(expect_script)
+        end
+      end
+    end
 
-# $script = $(Join-Path \"/tmp/vagrant-windows-domain-1\" \"manifests/MyWebsite.ps1\" -Resolve)
-# echo \"PSModulePath Configured: ${env:PSModulePath}\"
-# echo \"Running Configuration file: ${script}\"
+    context "with 'unsecure' parameter provided" do
+      before do
+        root_config.unsecure = true
+      end
 
-# # Generate the MOF file, only if a MOF path not already provided.
-# # Import the Manifest
-# . $script
+      it "should generate a valid powershell command to add the computer to a domain" do
+        script = subject.generate_command_runner_script.strip
+        expect_script = "Add-Computer -DomainName foo.com -Unsecure -Verbose -Force"
+        expect(script).to eq(expect_script)
+      end
 
-# cd \"/tmp/vagrant-windows-domain-1\"
-# $StagingPath = $(Join-Path \"/tmp/vagrant-windows-domain-1\" \"staging\")
-# $response = MyWebsite -OutputPath $StagingPath  4>&1 5>&1 | Out-String
+      it "should generate a valid powershell command to remove the computer from a domain" do
+        script = subject.generate_command_runner_script(false).strip
+        expect_script = "Remove-Computer -DomainName foo.com -Verbose -Force"
+        expect(script).to eq(expect_script)
+      end
+    end
 
-# # Start a DSC Configuration run
-# $response += Start-DscConfiguration -Force -Wait -Verbose -Path $StagingPath 4>&1 5>&1 | Out-String
-# $response"
-
-#         expect(script).to eq(expect_script)
-#       end
-#     end
-
-#   end
-
-#   describe "write DSC Runner script" do
-#     it "should upload the customised DSC runner to the guest" do
-#       script = "myscript"
-#       path = "/local/runner/path"
-#       guest_path = "c:/tmp/vagrant-windows-domain-runner.ps1"
-#       machine.stub(config: root_config, env: env, communicate: communicator)
-#       file = double("file")
-#       allow(file).to receive(:path).and_return(path)
-#       allow(Tempfile).to receive(:new) { file }
-#       expect(file).to receive(:write).with(script)
-#       expect(file).to receive(:fsync)
-#       expect(file).to receive(:close).exactly(2).times
-#       expect(file).to receive(:unlink)
-#       expect(communicator).to receive(:upload).with(path, guest_path)
-#       res = subject.write_dsc_runner_script(script)
-#       expect(res.to_s).to eq(guest_path)
-#     end
-#   end
-
-#   describe "Apply DSC" do
-#     it "should invoke the DSC Runner and notify the User of provisioning status" do
-#       expect(ui).to receive(:info).with(any_args).once
-#       expect(ui).to receive(:info).with("provisioned!", {color: :green, new_line: false, prefix: false}).once
-#       allow(machine).to receive(:communicate).and_return(communicator)
-#       expect(communicator).to receive(:sudo).with('. ' + "'c:/tmp/vagrant-windows-domain-runner.ps1'",{:elevated=>true, :error_key=>:ssh_bad_exit_status_muted, :good_exit=>0, :shell=>:powershell}).and_yield(:stdout, "provisioned!")
-
-#       subject.run_dsc_apply
-#     end
-
-#     it "should show error output in red" do
-#       expect(ui).to receive(:info).with(any_args).once
-#       expect(ui).to receive(:info).with("provisioned!", {color: :red, new_line: false, prefix: false}).once
-#       allow(machine).to receive(:communicate).and_return(communicator)
-#       expect(communicator).to receive(:sudo).with('. ' + "'c:/tmp/vagrant-windows-domain-runner.ps1'",{:elevated=>true, :error_key=>:ssh_bad_exit_status_muted, :good_exit=>0, :shell=>:powershell}).and_yield(:stderr, "provisioned!")
-
-#       subject.run_dsc_apply
-    # end
-  # end
+  end
 end

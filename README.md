@@ -30,7 +30,7 @@ config.vm.provision :windows_domain do |domain|
     #
     # Uses the Rename-Computer PowerShell command. ORRRR -NewName flag??
     # Specifies a new name for the computer in the new domain.
-    domain.computer_name "myfandangledname"
+    domain.computer_name = "myfandangledname"
 
     # The Username to use when authenticating against the Domain.
     #
@@ -50,7 +50,7 @@ config.vm.provision :windows_domain do |domain|
     # The set of Advanced options to pass when joining the Domain.
     #
     # See (https://technet.microsoft.com/en-us/library/hh849798.aspx) for detail, these are generally not required.
-    domain.join_options = { "--JoinReadOnly" => "" }
+    domain.join_options = [ "JoinReadOnly" ]
 
     # Organisational Unit path in AD.
     #

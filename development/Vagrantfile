@@ -9,8 +9,8 @@ SCRIPT
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
-  
-  config.vm.box = "mfellows/windows2012r2"
+
+  config.vm.box = "windows2012r2"
   config.vm.guest = :windows
   config.vm.communicator = "winrm"
   config.vm.network :forwarded_port, guest: 5985, host: 5985, id: "winrm", auto_correct: true
@@ -27,7 +27,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     #
     # Uses the Rename-Computer PowerShell command. ORRRR -NewName flag??
     # Specifies a new name for the computer in the new domain.
-    domain.computer_name "myfandangledname"
+    domain.computer_name = "myfandangledname"
 
     # The Username to use when authenticating against the Domain.
     #
@@ -40,23 +40,23 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     # join the computers to a new domain. 
     domain.password = "iprobablyshouldntusethisfield"
 
-    # The set of Advanced options to pass when joining the Domain.
+    # An array of advanced options to pass when joining the Domain.
     #
     # See (https://technet.microsoft.com/en-us/library/hh849798.aspx) for detail.
     # NOTE: If we user :computer_name from above this needs to be merged!!
-    domain.join_options
+    # domain.join_options = ['Win9xUpgrade']
 
     # Organisational Unit path in AD.
     #
     # Specifies an organizational unit (OU) for the domain account. 
     # Enter the full distinguished name of the OU in quotation marks. 
     # The default value is the default OU for machine objects in the domain.
-    domain.ou_path
+    # domain.ou_path = nil
 
     # Performs an unsecure join to the specified domain.
     #
     # When this option is used username/password are not required
-    domain.unsecure
+    domain.unsecure = false
   end
 
   # Confirm that this will run after the reload from the domain provisioner!

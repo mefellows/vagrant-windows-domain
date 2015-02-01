@@ -77,11 +77,6 @@ describe VagrantPlugins::WindowsDomain::Config do
       assert_error("You must not supply a \"username\" and \"password\" if \"unsecure\" is set to true.")
     end
 
-    it "should detect the current computers' name" do
-      subject.validate(machine)
-      expect(subject.old_computer_name).to eq("myoldcomputername")
-    end
-
   end
 
 end

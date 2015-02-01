@@ -13,9 +13,7 @@ module VagrantPlugins
       attr_accessor :domain
 
       # The new Computer Name to use when joining the domain.
-      #
-      # Uses the Rename-Computer PowerShell command. ORRRR -NewName flag??
-      # Specifies a new name for the computer in the new domain.
+      # Specifies a new name for the computer in the new domain. Uses the -NameName Option.
       attr_accessor :computer_name
 
       # The Username to use when authenticating against the Domain.
@@ -47,12 +45,6 @@ module VagrantPlugins
       # When this option is used username/password are not required
       attr_accessor :unsecure
 
-      # The current Computer Name.
-      #
-      # Used to determine whether or not we need to rename the computer 
-      # on join. This parameter should not be manually set.
-      attr_accessor :old_computer_name      
-
       def initialize
         super
         @domain            = UNSET_VALUE
@@ -77,7 +69,7 @@ module VagrantPlugins
         @computer_name     = nil if @computer_name == UNSET_VALUE || @computer_name == ""
         @username          = nil if @username == UNSET_VALUE || @username == ""
         @password          = nil if @password == UNSET_VALUE || @password == ""
-        @join_options      = {} if @join_options == UNSET_VALUE
+        @join_options      = [] if @join_options == UNSET_VALUE
         @ou_path           = nil if @ou_path == UNSET_VALUE
         @unsecure          = false if @unsecure == UNSET_VALUE
       end
@@ -88,9 +80,7 @@ module VagrantPlugins
       #
       # @param [Machine] The current {Machine}
       # @return [Hash] Any errors or {} if no errors found
-      def validate(machine)
-        @old_computer_name = get_guest_computer_name(machine)
-        
+      def validate(machine)        
         errors = _detected_errors
 
         # Need to supply one of them!
@@ -99,23 +89,7 @@ module VagrantPlugins
         end
         
         { "windows domain provisioner" => errors }
-      end
-
-      # Gets the Computer Name from the guest machine
-      def get_guest_computer_name(machine)
-        computerName = ""
-        machine.communicate.shell.powershell("$env:COMPUTERNAME") do |type, data|
-          if !data.chomp.empty?
-            if [:stderr, :stdout].include?(type)
-              color = type == :stdout ? :green : :red
-              computerName = data.chomp
-              @logger.info("Detected guest computer name: #{computerName}")
-            end
-          end
-        end
-
-        computerName
-      end      
+      end     
     end
   end
 end
