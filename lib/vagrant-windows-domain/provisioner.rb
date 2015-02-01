@@ -237,7 +237,7 @@ module VagrantPlugins
           end
         end
 
-        result
+        result == 0
       end
 
       # Gets the Computer Name from the guest machine
