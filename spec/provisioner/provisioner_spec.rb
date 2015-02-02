@@ -169,7 +169,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       expect(communicator).to receive(:sudo).with(". 'c:/tmp/vagrant-windows-domain-runner.ps1'", {:elevated=>true, :error_key=>:ssh_bad_exit_status_muted, :good_exit=>0, :shell=>:powershell})
       expect(ui).to receive(:info).with(any_args).once
       
-      subject.cleanup
+      subject.destroy
     end
 
     it "should ask for credentials when leaving domain when no credentials were provided" do
@@ -183,7 +183,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       expect(ui).to receive(:ask).with("Please enter your domain password (output will be hidden): ", {:echo=>false}).and_return("myusername")
       expect(ui).to receive(:ask).with("Please enter your domain username: ")      
 
-      subject.cleanup
+      subject.destroy
     end
 
   end
@@ -222,7 +222,7 @@ Add-Computer -DomainName foo.com -Credential $credentials -Verbose -Force
         expect_script = 
 %Q{$secpasswd = ConvertTo-SecureString "password" -AsPlainText -Force
 $credentials = New-Object System.Management.Automation.PSCredential ("username", $secpasswd)
-Remove-Computer -DomainName foo.com -UnjoinDomainCredential $credentials -Verbose -Force
+Remove-Computer -UnjoinDomainCredential $credentials -Workgroup "WORKGROUP" -Verbose -Force
 }
         expect(script).to eq(expect_script)
       end
@@ -259,7 +259,7 @@ Add-Computer -DomainName foo.com -Credential $credentials -NewName 'mynewcompute
 
       it "should generate a valid powershell command to remove the computer from a domain" do
         script = subject.generate_command_runner_script(false).strip
-        expect_script = "Remove-Computer -DomainName foo.com -Verbose -Force"
+        expect_script = "Remove-Computer  -Workgroup \"WORKGROUP\" -Verbose -Force"
         expect(script).to eq(expect_script)
       end
     end

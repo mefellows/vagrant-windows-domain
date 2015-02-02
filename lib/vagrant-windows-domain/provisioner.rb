@@ -102,7 +102,7 @@ module VagrantPlugins
       # This is the method called when destroying a machine that allows
       # for any state related to the machine created by the provisioner
       # to be cleaned up.
-      def cleanup        
+      def destroy
         set_credentials
         leave_domain
       end
@@ -155,9 +155,9 @@ module VagrantPlugins
 
       # Generates the argument list
       def generate_command_arguments(add_to_domain=true)
-        params = {"-DomainName" => @config.domain }
 
         if add_to_domain
+          params = {"-DomainName" => @config.domain }
 
           if @config.unsecure
             params["-Unsecure"] = nil
@@ -173,6 +173,7 @@ module VagrantPlugins
             params["-OUPath"] = "'#{@config.ou_path}'"
           end
         else
+          params = {}
           if !@config.unsecure
             params["-UnjoinDomainCredential $credentials"] = nil
           end
