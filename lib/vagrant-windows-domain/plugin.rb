@@ -1,5 +1,4 @@
 require "vagrant"
-require "vagrant-windows-domain/action/leave_domain"
 
 module VagrantPlugins
   module WindowsDomain
@@ -28,7 +27,7 @@ module VagrantPlugins
       action_hook(:windows_domain, :machine_action_destroy) do |hook|
         require_relative 'action/leave_domain'
         hook.prepend(VagrantPlugins::WindowsDomain::LeaveDomain)
-      end      
+      end
     end
   end
 end
