@@ -155,9 +155,9 @@ module VagrantPlugins
 
       # Generates the argument list
       def generate_command_arguments(add_to_domain=true)
-        params = {"-DomainName" => @config.domain }
 
         if add_to_domain
+          params = {"-DomainName" => @config.domain }
 
           if @config.unsecure
             params["-Unsecure"] = nil
@@ -173,6 +173,7 @@ module VagrantPlugins
             params["-OUPath"] = "'#{@config.ou_path}'"
           end
         else
+          params = {}
           if !@config.unsecure
             params["-UnjoinDomainCredential $credentials"] = nil
           end
