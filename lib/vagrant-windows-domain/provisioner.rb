@@ -102,7 +102,7 @@ module VagrantPlugins
       # This is the method called when destroying a machine that allows
       # for any state related to the machine created by the provisioner
       # to be cleaned up.
-      def cleanup        
+      def destroy
         set_credentials
         leave_domain
       end

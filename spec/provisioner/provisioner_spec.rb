@@ -169,7 +169,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       expect(communicator).to receive(:sudo).with(". 'c:/tmp/vagrant-windows-domain-runner.ps1'", {:elevated=>true, :error_key=>:ssh_bad_exit_status_muted, :good_exit=>0, :shell=>:powershell})
       expect(ui).to receive(:info).with(any_args).once
       
-      subject.cleanup
+      subject.destroy
     end
 
     it "should ask for credentials when leaving domain when no credentials were provided" do
@@ -183,7 +183,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       expect(ui).to receive(:ask).with("Please enter your domain password (output will be hidden): ", {:echo=>false}).and_return("myusername")
       expect(ui).to receive(:ask).with("Please enter your domain username: ")      
 
-      subject.cleanup
+      subject.destroy
     end
 
   end
