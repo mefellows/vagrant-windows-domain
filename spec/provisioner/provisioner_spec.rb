@@ -187,10 +187,8 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
     it "should not leave domain plugin not associated with current Vagrantfile" do
       allow(machine).to receive(:communicate).and_return(communicator)
 
-      root_config.username = nil
-      root_config.password = nil
-      root_config.id = nil
-      expect(ui).to receive(:say).with("No machine id, nothing for 'windows-domain-provisioner' to do")
+      subject = described_class.new machine, []
+
       expect(ui).to_not receive(:ask)
       expect(subject.destroy).to eq(nil)
     end

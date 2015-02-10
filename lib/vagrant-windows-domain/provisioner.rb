@@ -103,12 +103,13 @@ module VagrantPlugins
       # for any state related to the machine created by the provisioner
       # to be cleaned up.
       def destroy
-        if !@machine.id || !@machine.config.windows_domain.id
-          @machine.env.ui.say "No machine id, nothing for 'windows-domain-provisioner' to do"
+        if @config && @config.include?("domain")
+          set_credentials
+          leave_domain
+        else
+          @logger.debug("Not leaving domain on `destroy` action - no valid configuration detected")
           return
         end
-        set_credentials
-        leave_domain
       end
 
       # Restarts the Computer and waits

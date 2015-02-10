@@ -76,13 +76,6 @@ describe VagrantPlugins::WindowsDomain::Config do
       assert_invalid
       assert_error("You must not supply a \"username\" and \"password\" if \"unsecure\" is set to true.")
     end
-
-    it "should populate the id with the unique machine id" do
-      subject.validate(machine)
-
-      expect(subject.id).to eq("1234")
-    end
-
   end
 
 end
