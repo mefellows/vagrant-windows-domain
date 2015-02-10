@@ -10,7 +10,7 @@ describe VagrantPlugins::WindowsDomain::Config do
 
  let(:root_path)           { (Pathname.new(Dir.mktmpdir)).to_s }
   let(:ui)                  { Vagrant::UI::Silent.new }
-  let(:machine)             { double("machine", ui: ui) }
+  let(:machine)             { double("machine", ui: ui, id: "1234") }
   let(:env)                 { double("environment", root_path: root_path, ui: ui) }
   let(:vm)                  { double ("vm") }
   let(:communicator)        { double ("communicator") }
@@ -27,7 +27,7 @@ describe VagrantPlugins::WindowsDomain::Config do
     before do
       env = double("environment", root_path: "/tmp/vagrant-windows-domain-path")
       config = double("config")
-      machine.stub(config: config, env: env)
+      machine.stub(config: config, env: env, id: "1234")
     end
 
     before { subject.finalize! }
@@ -75,6 +75,12 @@ describe VagrantPlugins::WindowsDomain::Config do
 
       assert_invalid
       assert_error("You must not supply a \"username\" and \"password\" if \"unsecure\" is set to true.")
+    end
+
+    it "should populate the id with the unique machine id" do
+      subject.validate(machine)
+
+      expect(subject.id).to eq("1234")
     end
 
   end

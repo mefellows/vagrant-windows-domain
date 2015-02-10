@@ -8,7 +8,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
 
   let(:root_path)           { (Pathname.new(Dir.mktmpdir)).to_s }
   let(:ui)                  { double("ui") }
-  let(:machine)             { double("machine", ui: ui) }
+  let(:machine)             { double("machine", ui: ui, id: "1234") }
   let(:env)                 { double("environment", root_path: root_path, ui: ui) }
   let(:vm)                  { double ("vm") }
   let(:communicator)        { double ("communicator") }
@@ -23,7 +23,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
   describe "configure" do
     before do
       allow(machine).to receive(:root_config).and_return(root_config)
-      machine.stub(config: root_config, env: env)
+      machine.stub(config: root_config, env: env, id: "1234")
       allow(ui).to receive(:say).with(any_args)
       allow(machine).to receive(:communicate).and_return(communicator)
       allow(communicator).to receive(:shell).and_return(shell)
@@ -51,7 +51,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
 
     before do
       allow(machine).to receive(:root_config).and_return(root_config)
-      machine.stub(config: root_config, env: env)
+      machine.stub(config: root_config, env: env, id: "1234")
       allow(ui).to receive(:say).with(any_args)
       allow(machine).to receive(:communicate).and_return(communicator)
       allow(communicator).to receive(:shell).and_return(shell)
@@ -151,6 +151,16 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
     before do
       allow(communicator).to receive(:shell).and_return(shell)
       allow(shell).to receive(:powershell).and_yield(:stdout, "myoldcomputername")
+      config = double(config)
+      allow(machine).to receive(:config).and_return(config)
+      allow(config).to receive(:windows_domain).and_return(root_config)
+      allow(machine).to receive(:env).and_return(env)
+
+      root_config.domain = "foo.com"
+      root_config.username = "username"
+      root_config.password = "password"
+      root_config.finalize!
+      root_config.validate(machine)
     end
 
     it "should leave domain" do
@@ -168,13 +178,26 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       expect(communicator).to receive(:upload)
       expect(communicator).to receive(:sudo).with(". 'c:/tmp/vagrant-windows-domain-runner.ps1'", {:elevated=>true, :error_key=>:ssh_bad_exit_status_muted, :good_exit=>0, :shell=>:powershell})
       expect(ui).to receive(:info).with(any_args).once
-      
+
+      expect(ui).to_not receive(:say)
+      expect(ui).to_not receive(:ask)
       subject.destroy
+    end
+
+    it "should not leave domain plugin not associated with current Vagrantfile" do
+      allow(machine).to receive(:communicate).and_return(communicator)
+
+      root_config.username = nil
+      root_config.password = nil
+      root_config.id = nil
+      expect(ui).to receive(:say).with("No machine id, nothing for 'windows-domain-provisioner' to do")
+      expect(ui).to_not receive(:ask)
+      expect(subject.destroy).to eq(nil)
     end
 
     it "should ask for credentials when leaving domain when no credentials were provided" do
       root_config.username = nil
-      root_config.password = nil      
+      root_config.password = nil
       allow(machine).to receive(:communicate).and_return(communicator)
       allow(machine).to receive(:env).and_return(env)
       expect(communicator).to receive(:upload)
@@ -182,7 +205,6 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       expect(ui).to receive(:info).with(any_args).twice
       expect(ui).to receive(:ask).with("Please enter your domain password (output will be hidden): ", {:echo=>false}).and_return("myusername")
       expect(ui).to receive(:ask).with("Please enter your domain username: ")      
-
       subject.destroy
     end
 
@@ -191,7 +213,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
   describe "Powershell runner script" do
     before do
       allow(machine).to receive(:root_config).and_return(root_config)
-      machine.stub(config: root_config, env: env)
+      machine.stub(config: root_config, env: env, id: "1234")
       allow(ui).to receive(:say).with(any_args)
       allow(machine).to receive(:communicate).and_return(communicator)
       allow(communicator).to receive(:shell).and_return(shell)

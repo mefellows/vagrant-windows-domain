@@ -45,6 +45,10 @@ module VagrantPlugins
       # When this option is used username/password are not required
       attr_accessor :unsecure
 
+      # Internal id for use with detecting whether or not this
+      # plugin should be run in the `destroy` or phase.
+      attr_accessor :id
+
       def initialize
         super
         @domain            = UNSET_VALUE
@@ -82,6 +86,9 @@ module VagrantPlugins
       # @return [Hash] Any errors or {} if no errors found
       def validate(machine)        
         errors = _detected_errors
+
+        # Store machine id for unique reference
+        @id = machine.id
 
         # Need to supply one of them!
         if ( (@username != nil && @password != nil) && @unsecure == true)
