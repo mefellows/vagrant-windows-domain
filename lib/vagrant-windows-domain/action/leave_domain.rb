@@ -23,11 +23,10 @@ module VagrantPlugins
         if @config
           @logger.debug("Configuration detected, triggering leave domain action")
           @provisioner.destroy
-          @app.call(env)
         else
           @logger.debug("No configuration detected, not leaving any domain")
-          @app.call(env)
         end
+        @app.call(env)
       end
 
     end
