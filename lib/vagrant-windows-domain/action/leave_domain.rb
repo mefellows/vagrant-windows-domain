@@ -26,6 +26,7 @@ module VagrantPlugins
           @app.call(env)
         else
           @logger.debug("No configuration detected, not leaving any domain")
+          @app.call(env)
         end
       end
 
