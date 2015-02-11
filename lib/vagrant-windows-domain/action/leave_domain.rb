@@ -1,5 +1,4 @@
 require_relative '../provisioner'
-require 'pp'
 
 module VagrantPlugins
   module WindowsDomain
@@ -24,8 +23,6 @@ module VagrantPlugins
       end
 
       def call(env)
-        require 'pp'
-        pp @machine.state
 
         if [:not_created].include? @machine.state.id
           @logger.debug("Machine not created, nothing to do")
