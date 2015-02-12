@@ -8,6 +8,11 @@ module VagrantPlugins
     class LeaveDomain
       include VagrantPlugins::WindowsDomain
 
+      attr_accessor :machine
+      attr_accessor :config
+      attr_accessor :env
+      attr_accessor :app
+
       def initialize(app, env)
         @logger = Log4r::Logger.new("vagrant::provisioners::vagrant_windows_domain")
         @logger.debug("Initialising WindowsDomain plugin on destroy action")
