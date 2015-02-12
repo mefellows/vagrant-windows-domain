@@ -5,6 +5,14 @@ module VagrantPlugins
     # Include the built-in modules so we can use them as top-level things.
     include Vagrant::Action::Builtin
 
+    # Leave a domain on a `vagrant destroy`.
+    #
+    # This is an Action middleware component that will detect the state of the machine -
+    # and any corresponding configuration and act accordingly. This function accepts user input and
+    # will halt the execution of proceeding middleware if the user chooses to cancel.
+    #
+    # Also note that it will interfere with a `vagrant destroy` user input to avoid duplicate "are you sure.."
+    # messages.
     class LeaveDomain
       include VagrantPlugins::WindowsDomain
 
@@ -12,6 +20,7 @@ module VagrantPlugins
       attr_accessor :config
       attr_accessor :env
       attr_accessor :app
+      attr_accessor :provisioner
 
       def initialize(app, env)
         @logger = Log4r::Logger.new("vagrant::provisioners::vagrant_windows_domain")
@@ -27,9 +36,11 @@ module VagrantPlugins
         @provisioner = VagrantPlugins::WindowsDomain::Provisioner.new(@machine, @config)
       end
 
+      # The middleware method that is invoked automatically by the Plugin ecosystem.
+      # Expected to call the next middleware component in the chain if action should proceed.
       def call(env)
 
-        if @config and @config.include? "domain"
+        if @config and @config.include? "domain" and @config.domain != nil
 
        	  if [:not_created].include? @machine.state.id
        	    @logger.debug("Machine not created, nothing to do")
@@ -40,7 +51,6 @@ module VagrantPlugins
        	    	@logger.debug("Valid configuration detected, triggering leave domain action")
        	    	@provisioner.destroy
        	    end
-       	  # elsif [:saved, :paused, :poweroff].include? @machine.state.id
        	  else
        	    @machine.env.ui.say(:warn, "Machine is currently not running. To properly leave the #{@config.domain} network the machine needs to be running and connected to the network in which it was provisioned. Please run `vagrant up` and then `vagrant destroy`.\n")
        	    answer = @machine.env.ui.ask("Would you like to continue destroying this machine, leaving this machine orphaned in the '#{@config.domain}' network? (y/n)")
