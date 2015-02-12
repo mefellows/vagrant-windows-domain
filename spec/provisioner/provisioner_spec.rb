@@ -73,7 +73,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
     it "should join the domain" do
       allow(communicator).to receive(:upload)
       allow(ui).to receive(:info)
-      allow(shell).to receive(:powershell).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1")
+      expect(shell).to receive(:powershell).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1")
       expect(communicator).to receive(:sudo).with("del c:/tmp/vagrant-windows-domain-runner.ps1")
       expect(machine).to receive(:action). with(:reload, {:provision_ignore_sentinel=>false})
       expect(communicator).to receive(:ready?).and_return(true)
