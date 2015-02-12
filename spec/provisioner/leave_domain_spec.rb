@@ -60,6 +60,17 @@ describe VagrantPlugins::WindowsDomain::LeaveDomain do
 			subject.call(env)
 
 		end
+
+		it "should not continue if the user declines to destroy the machine" do
+			state = double("state", id: :running)
+			expect(provisioner).to_not receive(:destroy)
+
+            expect(ui).to receive(:ask).with("Are you sure you want to destroy this machine and disconnect from #{domain}? (y/n)").and_return("n")
+            expect(machine).to receive(:state).and_return(state).twice
+            expect(app).to_not receive(:call).with(env)
+            subject.call(env)
+
+		end
   	end
 
   	context "when machine is :paused, :saved or :poweroff" do

@@ -46,11 +46,11 @@ module VagrantPlugins
        	    @logger.debug("Machine not created, nothing to do")
        	  elsif [:running].include? @machine.state.id
        	    answer = @machine.env.ui.ask("Are you sure you want to destroy this machine and disconnect from #{@config.domain}? (y/n)")
-       	    if answer.downcase == 'y'
-       	    	env[:force_confirm_destroy] = true # Prevent the popup dialog again
-       	    	@logger.debug("Valid configuration detected, triggering leave domain action")
-       	    	@provisioner.destroy
-       	    end
+            return unless answer.downcase == 'y' # Bail out of destroy and prevent middleware from continuing on
+
+env[:force_confirm_destroy] = true # Prevent the popup dialog again
+@logger.debug("Valid configuration detected, triggering leave domain action")
+@provisioner.destroy
        	  else
        	    @machine.env.ui.say(:warn, "Machine is currently not running. To properly leave the #{@config.domain} network the machine needs to be running and connected to the network in which it was provisioned. Please run `vagrant up` and then `vagrant destroy`.\n")
        	    answer = @machine.env.ui.ask("Would you like to continue destroying this machine, leaving this machine orphaned in the '#{@config.domain}' network? (y/n)")
