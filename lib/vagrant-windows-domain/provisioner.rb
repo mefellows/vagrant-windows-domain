@@ -147,7 +147,7 @@ module VagrantPlugins
       def generate_command_runner_script(add_to_domain=true)
         path = File.expand_path("../templates/runner.ps1", __FILE__)
 
-        script = Vagrant::Util::TemplateRenderer.render(path, options: {
+        Vagrant::Util::TemplateRenderer.render(path, options: {
             config: @config,
             username: @config.username,
             password: @config.password,
@@ -220,30 +220,26 @@ module VagrantPlugins
       # Streams the output of the command to the UI
       # @return [boolean] The result of the remote command
       def run_remote_command_runner(script_path)
-        command = ". '#{script_path}'"
-
         @machine.ui.info(I18n.t(
           "vagrant_windows_domain.running"))
 
-        opts = {
-          elevated: true,
-          error_key: :ssh_bad_exit_status_muted,
-          good_exit: 0,
-          shell: :powershell
-        }
-
-        result = @machine.communicate.sudo(command, opts) do |type, data|
+        # A bit of an ugly dance, but this is how we get neat, colourised output and exit codes from a Powershell run
+        last_type = nil
+        new_line = ""
+        error = false
+        machine.communicate.shell.powershell("powershell -ExecutionPolicy Bypass -OutputFormat Text -file #{script_path}") do |type, data|
           if !data.chomp.empty?
+            error = true if type == :stderr
             if [:stderr, :stdout].include?(type)
               color = type == :stdout ? :green : :red
-              @machine.ui.info(
-                data.chomp,
-                color: color, new_line: false, prefix: false)              
+              new_line = "\r\n" if last_type != nil and last_type != type
+              last_type = type
+              @machine.ui.info( new_line + data.chomp, color: color, new_line: false, prefix: false)
             end
           end
         end
 
-        result == 0
+        error == false
       end
 
       # Gets the Computer Name from the guest machine
@@ -252,7 +248,6 @@ module VagrantPlugins
         machine.communicate.shell.powershell("$env:COMPUTERNAME") do |type, data|
           if !data.chomp.empty?
             if [:stderr, :stdout].include?(type)
-              color = type == :stdout ? :green : :red
               computerName = data.chomp
               @logger.info("Detected guest computer name: #{computerName}")
             end
