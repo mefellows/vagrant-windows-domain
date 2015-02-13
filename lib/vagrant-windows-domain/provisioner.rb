@@ -20,13 +20,13 @@ module VagrantPlugins
       # Default path for storing the transient script runner
       WINDOWS_DOMAIN_GUEST_RUNNER_PATH = "c:/tmp/vagrant-windows-domain-runner.ps1"
       
-      attr_accessor :restart_sleep_duration        
+      attr_accessor :restart_sleep_duration
 
       # The current Computer Name.
       #
       # Used to determine whether or not we need to rename the computer 
       # on join. This parameter should not be manually set.
-      attr_accessor :old_computer_name      
+      attr_accessor :old_computer_name
 
       # Constructs the Provisioner Plugin.
       #
@@ -105,7 +105,9 @@ module VagrantPlugins
       def destroy
         if @config && @config.include?("domain")
           set_credentials
-          leave_domain
+          if leave_domain
+            restart_guest
+          end
         else
           @logger.debug("Not leaving domain on `destroy` action - no valid configuration detected")
           return
@@ -223,11 +225,19 @@ module VagrantPlugins
         @machine.ui.info(I18n.t(
           "vagrant_windows_domain.running"))
 
+        opts = {
+          elevated:    true,
+          error_check: true,
+          error_key:   nil, # use the error_class message key
+          good_exit:   0,
+          shell:       :powershell
+        }
+
         # A bit of an ugly dance, but this is how we get neat, colourised output and exit codes from a Powershell run
         last_type = nil
         new_line = ""
         error = false
-        machine.communicate.shell.powershell("powershell -ExecutionPolicy Bypass -OutputFormat Text -file #{script_path}") do |type, data|
+        machine.communicate.sudo("powershell -ExecutionPolicy Bypass -OutputFormat Text -file #{script_path}", opts) do |type, data|
           if !data.chomp.empty?
             error = true if type == :stderr
             if [:stderr, :stdout].include?(type)

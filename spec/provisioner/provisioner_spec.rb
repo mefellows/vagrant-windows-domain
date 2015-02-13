@@ -73,7 +73,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
     it "should join the domain" do
       allow(communicator).to receive(:upload)
       allow(ui).to receive(:info)
-      expect(shell).to receive(:powershell).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1")
+      expect(communicator).to receive(:sudo).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1", {:elevated=>true, :error_check=>true, :error_key=>nil, :good_exit=>0, :shell=>:powershell})
       expect(communicator).to receive(:sudo).with("del c:/tmp/vagrant-windows-domain-runner.ps1")
       expect(machine).to receive(:action). with(:reload, {:provision_ignore_sentinel=>false})
       expect(communicator).to receive(:ready?).and_return(true)
@@ -85,7 +85,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
     it "should restart the machine on a successful domain join" do
       allow(communicator).to receive(:upload)
       allow(ui).to receive(:info)
-      expect(shell).to receive(:powershell).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1")
+      expect(communicator).to receive(:sudo).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1", {:elevated=>true, :error_check=>true, :error_key=>nil, :good_exit=>0, :shell=>:powershell})
       expect(communicator).to receive(:sudo).with("del c:/tmp/vagrant-windows-domain-runner.ps1")
       expect(machine).to receive(:action). with(:reload, {:provision_ignore_sentinel=>false})
       expect(communicator).to receive(:ready?).and_return(true)
@@ -97,7 +97,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       allow(communicator).to receive(:upload)
       allow(ui).to receive(:info).with("some exception thrown!", {:color=>:red, :new_line=>false, :prefix=>false}) # Red output on error please!
       allow(ui).to receive(:info).with("\"Running Windows Domain Provisioner\"")
-      expect(shell).to receive(:powershell).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1").and_yield(:stderr, "some exception thrown!")
+      expect(communicator).to receive(:sudo).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1", {:elevated=>true, :error_check=>true, :error_key=>nil, :good_exit=>0, :shell=>:powershell}).and_yield(:stderr, "some exception thrown!")
       expect(communicator).to receive(:sudo).with("del c:/tmp/vagrant-windows-domain-runner.ps1")
       expect(machine).to_not receive(:action). with(:reload, {:provision_ignore_sentinel=>false})
       subject.restart_sleep_duration = 0
@@ -167,7 +167,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
     it "should leave domain" do
       allow(machine).to receive(:communicate).and_return(communicator)
       expect(communicator).to receive(:upload)
-      expect(shell).to receive(:powershell).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1").and_yield(:stdout, "deleted")
+      expect(communicator).to receive(:sudo).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1", {:elevated=>true, :error_check=>true, :error_key=>nil, :good_exit=>0, :shell=>:powershell}).and_yield(:stdout, "deleted")
       expect(ui).to receive(:info).with("\"Running Windows Domain Provisioner\"")
       expect(ui).to receive(:info).with("deleted", {:color=>:green, :new_line=>false, :prefix=>false})
       
@@ -177,13 +177,18 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
 
     it "should leave domain when a `vagrant destroy` is issued" do
       allow(machine).to receive(:communicate).and_return(communicator)
+
       expect(communicator).to receive(:upload)
-      expect(shell).to receive(:powershell).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1").and_yield(:stdout, "deleted")
+      expect(communicator).to receive(:sudo).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1", {:elevated=>true, :error_check=>true, :error_key=>nil, :good_exit=>0, :shell=>:powershell}).and_yield(:stdout, "deleted")
       expect(ui).to receive(:info).with("\"Running Windows Domain Provisioner\"")
       expect(ui).to receive(:info).with("deleted", {:color=>:green, :new_line=>false, :prefix=>false})
-
+      expect(ui).to receive(:say).with(:info, "Restarting computer for updates to take effect.")
+      expect(machine).to receive(:action). with(:reload, {:provision_ignore_sentinel=>false})
       expect(ui).to_not receive(:say)
       expect(ui).to_not receive(:ask)
+      expect(communicator).to receive(:ready?).and_return(true)
+      subject.restart_sleep_duration = 0      
+
       subject.destroy
     end
 
@@ -201,11 +206,17 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       root_config.password = nil
       allow(machine).to receive(:communicate).and_return(communicator)
       allow(machine).to receive(:env).and_return(env)
+
       expect(communicator).to receive(:upload)
-      expect(shell).to receive(:powershell).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1").and_yield(:stdout, "deleted")
+      expect(communicator).to receive(:sudo).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1", {:elevated=>true, :error_check=>true, :error_key=>nil, :good_exit=>0, :shell=>:powershell}).and_yield(:stdout, "deleted")
       expect(ui).to receive(:info).with(any_args).twice
       expect(ui).to receive(:ask).with("Please enter your domain password (output will be hidden): ", {:echo=>false}).and_return("myusername")
-      expect(ui).to receive(:ask).with("Please enter your domain username: ")      
+      expect(ui).to receive(:ask).with("Please enter your domain username: ")
+      expect(ui).to receive(:say).with(:info, "Restarting computer for updates to take effect.")
+      expect(machine).to receive(:action). with(:reload, {:provision_ignore_sentinel=>false})
+      expect(communicator).to receive(:ready?).and_return(true)
+      subject.restart_sleep_duration = 0
+
       subject.destroy
     end
 
