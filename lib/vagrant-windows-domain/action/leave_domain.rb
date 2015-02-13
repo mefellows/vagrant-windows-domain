@@ -40,7 +40,7 @@ module VagrantPlugins
       # Expected to call the next middleware component in the chain if action should proceed.
       def call(env)
 
-        if @config and @config.include? "domain" and @config.domain != nil
+        if @config and @config.domain != nil
 
        	  if [:not_created].include? @machine.state.id
        	    @logger.debug("Machine not created, nothing to do")

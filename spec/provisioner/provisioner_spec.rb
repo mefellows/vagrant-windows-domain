@@ -195,7 +195,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
     it "should not leave domain plugin not associated with current Vagrantfile" do
       allow(machine).to receive(:communicate).and_return(communicator)
 
-      subject = described_class.new machine, []
+      subject = described_class.new machine, double("env", :domain => nil)
 
       expect(ui).to_not receive(:ask)
       expect(subject.destroy).to eq(nil)

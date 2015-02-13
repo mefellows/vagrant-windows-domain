@@ -103,7 +103,7 @@ module VagrantPlugins
       # for any state related to the machine created by the provisioner
       # to be cleaned up.
       def destroy
-        if @config && @config.include?("domain")
+        if @config && @config.domain != nil
           set_credentials
           if leave_domain
             restart_guest
