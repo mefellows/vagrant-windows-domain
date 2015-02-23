@@ -53,8 +53,8 @@ env[:force_confirm_destroy] = true # Prevent the popup dialog again
 @provisioner.destroy
        	  else
        	    @machine.env.ui.say(:warn, "Machine is currently not running. To properly leave the #{@config.domain} network the machine needs to be running and connected to the network in which it was provisioned. Please run `vagrant up` and then `vagrant destroy`.\n")
-       	    answer = @machine.env.ui.ask("Would you like to continue destroying this machine, leaving this machine orphaned in the '#{@config.domain}' network? (y/n)")
-       	    return unless answer.downcase == 'y' # Bail out of destroy and prevent middleware from continuing on
+       	    answer = @machine.env.ui.ask("Would you like to continue destroying this machine, leaving this machine orphaned in the '#{@config.domain}' network? If so, type 'destroy'")
+       	    return unless answer.downcase == 'destroy' # Bail out of destroy and prevent middleware from continuing on
 
        	    # OK, we're being naughty and letting the rest of the middleware do their things (i.e. destroy the machine, and such)
 

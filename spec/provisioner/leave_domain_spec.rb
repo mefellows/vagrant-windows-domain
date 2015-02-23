@@ -79,7 +79,7 @@ describe VagrantPlugins::WindowsDomain::LeaveDomain do
         subject.provisioner = provisioner
 
         expect(ui).to receive(:say).with(:warn, "Machine is currently not running. To properly leave the #{domain} network the machine needs to be running and connected to the network in which it was provisioned. Please run `vagrant up` and then `vagrant destroy`.\n")
-        expect(ui).to receive(:ask).with("Would you like to continue destroying this machine, leaving this machine orphaned in the '#{domain}' network? (y/n)").and_return("y")
+        expect(ui).to receive(:ask).with("Would you like to continue destroying this machine, leaving this machine orphaned in the '#{domain}' network? If so, type 'destroy'").and_return("destroy")
         expect(ui).to receive(:say).with(:warn, "Force destroying this machine and not leaving the domain foo.com. May FSM have mercy on your soul.")
         expect(machine).to receive(:state).and_return(state).twice
         expect(app).to receive(:call).with(env)
@@ -97,7 +97,7 @@ describe VagrantPlugins::WindowsDomain::LeaveDomain do
         subject.provisioner = provisioner
 
         expect(ui).to receive(:say).with(:warn, "Machine is currently not running. To properly leave the #{domain} network the machine needs to be running and connected to the network in which it was provisioned. Please run `vagrant up` and then `vagrant destroy`.\n")
-        expect(ui).to receive(:ask).with("Would you like to continue destroying this machine, leaving this machine orphaned in the '#{domain}' network? (y/n)").and_return("n")
+        expect(ui).to receive(:ask).with("Would you like to continue destroying this machine, leaving this machine orphaned in the '#{domain}' network? If so, type 'destroy'").and_return("n")
         expect(machine).to receive(:state).and_return(state).twice
         expect(app).to_not receive(:call).with(env)
         expect(provisioner).to_not receive(:destroy)
