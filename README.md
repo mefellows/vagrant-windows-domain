@@ -74,7 +74,7 @@ This is a great real-life example to get you on your way.
 
 Currently the plugin supports any Windows environment with Powershell 3+ installed (2008r2, 2012r2 should work nicely).
 
-## Uninistallation
+## Uninstallation
 
 ```vagrant plugin uninstall vagrant-windows-domain```
 
