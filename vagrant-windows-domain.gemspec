@@ -18,11 +18,11 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ["lib"]
 
-  spec.add_development_dependency "rake", '~> 10.3', '>= 10.3.0'
-  spec.add_development_dependency "bundler", "~> 1.6", '>= 1.6.0'
-  spec.add_development_dependency "coveralls", "~> 0.7.1", '>= 0.7.1'
-  spec.add_development_dependency "rspec-core", '~> 3.1', '>= 3.1.0'
-  spec.add_development_dependency "rspec-expectations", '~> 3.1', '>= 3.1.0'
-  spec.add_development_dependency "rspec-mocks", '~> 3.1', '>= 3.1.0'
-  spec.add_development_dependency "rspec-its", "~> 1.0.1", '>= 1.0.0'
+  spec.add_development_dependency "rake"
+  spec.add_development_dependency "bundler", ">= 1.5.2", "<= 1.10.6"
+  spec.add_development_dependency "coveralls", "~> 0.8.10", '>= 0.8.10'
+  spec.add_development_dependency "rspec-core", '~> 3.4.2', '>= 3.4.2'
+  spec.add_development_dependency "rspec-expectations", '~> 3.4.0', '>= 3.4.0'
+  spec.add_development_dependency "rspec-mocks", '~> 3.4.1', '>= 3.4.1'
+  spec.add_development_dependency "rspec-its", "~> 1.2.0", '>= 1.2.0'
 end

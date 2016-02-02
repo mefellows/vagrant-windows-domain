@@ -6,7 +6,7 @@ require 'vagrant-windows-domain/plugin'
 require 'rspec/its'
 require 'base'
 
-SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter[
+SimpleCov.formatters = [
     SimpleCov::Formatter::HTMLFormatter,
     Coveralls::SimpleCov::Formatter
 ]
@@ -18,7 +18,7 @@ end
 
 RSpec.configure do |config|
   config.expect_with :rspec do |c|
-    c.syntax = :expect
+    c.syntax = [:should, :expect]
   end
   config.color = true
   config.tty = true
