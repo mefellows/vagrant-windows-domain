@@ -1,4 +1,4 @@
-require "log4r"
+require 'log4r'
 require 'erb'
 
 module VagrantPlugins
@@ -188,8 +188,11 @@ module VagrantPlugins
 
         # Remove with unsecure
         join_params = @config.join_options.map { |a| "#{a}" }.join(',')
-        params.map { |k,v| "#{k}" + (!v.nil? ? " #{v}": '') }.join(' ') + join_params
-        
+        if join_params.to_s != ''
+          params["-Options"] = join_params
+        end
+
+        params.map { |k,v| "#{k}" + (!v.nil? ? " #{v}": '') }.join(' ')
       end
 
       # Writes the PowerShell runner script to a location on the guest.
