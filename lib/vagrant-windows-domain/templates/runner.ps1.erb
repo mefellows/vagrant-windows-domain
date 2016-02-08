@@ -1,9 +1,43 @@
+function Test-PartOfDomain($computerName, $domain){
+	$computerSystem = gwmi win32_computersystem
+	return ($computerSystem.Name -eq $computerName) -and ($computerSystem.PartOfDomain) -and ($computerSystem.Domain -eq $domain) 
+}
+
+function Test-JoinedToADomain(){
+	$computerSystem = gwmi win32_computersystem
+	return $computerSystem.PartOfDomain
+}
+
+function Repair-OpenSSHPasswd(){
+	$passwdPath = 'C:\Program Files\OpenSSH\etc\passwd'
+	$mkpasswdPath = 'C:\Program Files\OpenSSH\bin\mkpasswd.exe'
+	if ((Test-Path $passwdPath) -and (Test-Path $mkpasswdPath)){
+		$passwd = &$mkpasswdPath
+		$passwd = $passwd -replace '^([^+]*\+)', ''
+		$passwd | Set-Content $passwdPath -Encoding Ascii
+	}
+}
+
+$computerName='<%= options[:computer_name] %>'
 <% if options[:username] != nil && options[:unsecure] != true %>
-$secpasswd = ConvertTo-SecureString '<%= options[:password] %>' -AsPlainText -Force
-$credentials = New-Object System.Management.Automation.PSCredential ('<%= options[:username] %>', $secpasswd)
+$domain='<%= options[:domain] %>'
+$username='<%= options[:username] %>'
+$password='<%= options[:password] %>'
+$secpasswd = ConvertTo-SecureString $password -AsPlainText -Force
+$credentials = New-Object System.Management.Automation.PSCredential ($username, $secpasswd)
 <% end %>
 <% if options[:add_to_domain] === true %>
-Add-Computer <%= options[:parameters] %> -Verbose -Force -PassThru
+if (Test-PartOfDomain -computerName $computerName -domain $domain){
+	throw "$computerName already part of domain $domain"
+} else {
+	Add-Computer <%= options[:parameters] %> -Verbose -Force -PassThru
+	Repair-OpenSSHPasswd
+}
 <% else %>
-Remove-Computer <%= options[:parameters] %> -Workgroup 'WORKGROUP' -Verbose -Force -PassThru
+if (!(Test-JoinedToADomain)) {
+	Throw "$computerName not part of any domain"
+} else {
+	Remove-Computer <%= options[:parameters] %> -Workgroup 'WORKGROUP' -Verbose -Force -PassThru
+	Repair-OpenSSHPasswd
+}
 <% end %>
