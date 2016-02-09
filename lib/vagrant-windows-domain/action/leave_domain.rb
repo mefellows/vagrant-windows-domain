@@ -45,16 +45,20 @@ module VagrantPlugins
        	  if [:not_created].include? @machine.state.id
        	    @logger.debug("Machine not created, nothing to do")
        	  elsif [:running].include? @machine.state.id
-       	    answer = @machine.env.ui.ask("Are you sure you want to destroy this machine and disconnect from #{@config.domain}? (y/n)")
-            return unless answer.downcase == 'y' # Bail out of destroy and prevent middleware from continuing on
+            if !(env[:force_confirm_box_remove] || env[:force_confirm_destroy])
+       	      answer = @machine.env.ui.ask("Are you sure you want to destroy this machine and disconnect from #{@config.domain}? (y/n)")
+              return unless answer.downcase == 'y' # Bail out of destroy and prevent middleware from continuing on
+            end 
 
-env[:force_confirm_destroy] = true # Prevent the popup dialog again
-@logger.debug("Valid configuration detected, triggering leave domain action")
-@provisioner.destroy
+            env[:force_confirm_destroy] = true # Prevent the popup dialog again
+            @logger.debug("Valid configuration detected, triggering leave domain action")
+            @provisioner.destroy
        	  else
        	    @machine.env.ui.say(:warn, "Machine is currently not running. To properly leave the #{@config.domain} network the machine needs to be running and connected to the network in which it was provisioned. Please run `vagrant up` and then `vagrant destroy`.\n")
-       	    answer = @machine.env.ui.ask("Would you like to continue destroying this machine, leaving this machine orphaned in the '#{@config.domain}' network? If so, type 'destroy'")
-       	    return unless answer.downcase == 'destroy' # Bail out of destroy and prevent middleware from continuing on
+            if !(env[:force_confirm_box_remove] || env[:force_confirm_destroy])
+       	      answer = @machine.env.ui.ask("Would you like to continue destroying this machine, leaving this machine orphaned in the '#{@config.domain}' network? If so, type 'destroy'")
+       	      return unless answer.downcase == 'destroy' # Bail out of destroy and prevent middleware from continuing on
+            end 
 
        	    # OK, we're being naughty and letting the rest of the middleware do their things (i.e. destroy the machine, and such)
 
