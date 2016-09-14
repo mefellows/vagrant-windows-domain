@@ -4,6 +4,9 @@ $credentials = New-Object System.Management.Automation.PSCredential ("<%= option
 <% end %>
 <% if options[:add_to_domain] === true %>
 Add-Computer <%= options[:parameters] %> -Verbose -Force
+<% if options[:rename_trigger] === true %>
+Rename-Computer <%= options_rename[:parameters] %> -Verbose -Force
+<% end %>
 <% else %>
 Remove-Computer <%= options[:parameters] %> -Workgroup "WORKGROUP" -Verbose -Force
 <% end %>
