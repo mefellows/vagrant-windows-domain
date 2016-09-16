@@ -5,7 +5,22 @@ $credentials = New-Object System.Management.Automation.PSCredential ("<%= option
 <% if options[:add_to_domain] === true %>
 Add-Computer <%= options[:parameters] %> -Verbose -Force
 <% if options[:rename_trigger] === true %>
-Rename-Computer <%= options_rename[:parameters] %> -Verbose -Force
+$completed = $false
+while ( -not $completed) {
+try {
+Rename-Computer <%= options_rename[:parameters] %> -Verbose -Force -ErrorAction Stop
+$completed = $true
+} catch {
+if ($retrycount -ge 5) {
+Write-Verbose ("Rename failed the maximum number of {1} times." -f $retrycount)
+throw
+} else {
+Write-Verbose ("Rename failed, Retrying in 5 seconds...")
+Start-sleep -s 5
+$retrycount++
+}
+}
+}
 <% end %>
 <% else %>
 Remove-Computer <%= options[:parameters] %> -Workgroup "WORKGROUP" -Verbose -Force
