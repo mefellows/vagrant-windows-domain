@@ -170,6 +170,7 @@ module VagrantPlugins
         @machine.env.ui.say(:info, "Restarting computer for updates to take effect.")
         options = {}
         options[:provision_ignore_sentinel] = false
+        options[:lock] = false
         @machine.action(:reload, options)
         begin
           sleep @restart_sleep_duration
