@@ -135,6 +135,8 @@ module VagrantPlugins
         if (config.username == nil)
           @logger.info("==> Requesting username as none provided")
           config.username = @machine.env.ui.ask("Please enter your domain username: ")
+        else
+          @logger.info("==> Using username: #{config.username}")
         end
 
         if (config.password == nil)
