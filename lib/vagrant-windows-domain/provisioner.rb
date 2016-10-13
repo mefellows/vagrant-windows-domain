@@ -172,9 +172,12 @@ module VagrantPlugins
         options[:provision_ignore_sentinel] = false
         options[:lock] = false
         @machine.action(:reload, options)
-        begin
-          sleep 5
-        end until @machine.communicate.ready?
+
+        Timeout.timeout(@machine.config.vm.boot_timeout) do
+          begin
+            sleep 5
+          end until @machine.communicate.ready?
+        end
       end
 
       # Verify that we can call the remote operations.
