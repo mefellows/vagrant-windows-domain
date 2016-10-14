@@ -33,7 +33,7 @@ if (Test-PartOfDomain -computerName $computerName -domain $domain){
 	Add-Computer <%= options[:parameters] %> -Verbose -Force -PassThru
 	
 	# Rename computer separately: Fixes GH issue #11
-	<% if options[:rename_trigger] === true %>
+	<% if options[:rename] === true %>
 	$completed = $false
 	while ( -not $completed) {
 		try {

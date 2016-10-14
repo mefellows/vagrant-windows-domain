@@ -205,7 +205,7 @@ module VagrantPlugins
         path = File.expand_path("../templates/runner.ps1", __FILE__)
 
         if @config.computer_name != nil && @old_computer_name != nil && @config.computer_name.casecmp(@old_computer_name) != 0
-          @config.rename_trigger = true
+          @config.rename = true
         end
         
         Vagrant::Util::TemplateRenderer.render(path, options: {
@@ -217,7 +217,7 @@ module VagrantPlugins
             ou_path: @config.ou_path,
             add_to_domain: add_to_domain,
             unsecure: @config.unsecure,
-            rename_trigger: @config.rename_trigger,
+            rename: @config.rename,
             parameters: generate_command_arguments(add_to_domain)
         }, options_rename: {
             parameters: generate_command_arguments_rename

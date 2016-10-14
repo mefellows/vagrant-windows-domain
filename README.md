@@ -28,7 +28,7 @@ config.vm.provision :windows_domain do |domain|
 
     # The new Computer Name to use when joining the domain.
     #
-    # Uses the Rename-Computer PowerShell command. ORRRR -NewName flag??
+    # Uses the Rename-Computer PowerShell command.
     # Specifies a new name for the computer in the new domain.
     domain.computer_name = "myfandangledname"
 
