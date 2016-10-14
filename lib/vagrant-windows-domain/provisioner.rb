@@ -173,10 +173,9 @@ module VagrantPlugins
         options[:provision_ignore_sentinel] = false
         options[:lock] = false
         @machine.action(:reload, options)
-
         Timeout.timeout(@machine.config.vm.boot_timeout) do
           begin
-            sleep 5
+            sleep @restart_sleep_duration
           end until @machine.communicate.ready?
         end
       end

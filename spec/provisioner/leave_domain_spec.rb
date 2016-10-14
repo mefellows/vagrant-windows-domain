@@ -21,7 +21,7 @@ describe VagrantPlugins::WindowsDomain::LeaveDomain do
   let(:module_path)         { ["foo/modules", "foo/modules2"] }
   let(:config)              { VagrantPlugins::WindowsDomain::Config.new }
   let(:vm)                  { double("vm", provisioners: [double("prov", config: config)]) }
-  let(:root_config)          { double("root_config", vm: vm) } 
+  let(:root_config)          { double("root_config", vm: vm) }
   let(:env)                 { {:ui => ui, :machine => machine} }
   let(:machine)             { double("machine", ui: ui, id: "1234", config: root_config) }
   let(:provisioner)         { double("provisioner") }
