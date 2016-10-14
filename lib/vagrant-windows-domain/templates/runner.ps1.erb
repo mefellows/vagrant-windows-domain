@@ -1,27 +1,78 @@
-<% if options[:username] != nil && options[:unsecure] != true %>
-$secpasswd = ConvertTo-SecureString "<%= options[:password] %>" -AsPlainText -Force
-$credentials = New-Object System.Management.Automation.PSCredential ("<%= options[:username] %>", $secpasswd)
-<% end %>
-<% if options[:add_to_domain] === true %>
-Add-Computer <%= options[:parameters] %> -Verbose -Force
-<% if options[:rename_trigger] === true %>
-$completed = $false
-while ( -not $completed) {
-	try {
-		Rename-Computer <%= options_rename[:parameters] %> -Verbose -Force -ErrorAction Stop
-		$completed = $true
-	} catch {
-		if ($retrycount -ge 5) {
-			Write-Host ("Rename failed the maximum number of $retrycount times.")
-			throw
-		} else {
-			Write-Host ("Rename failed, Retrying in 5 seconds...")
-			Start-sleep -s 5
-			$retrycount++
-		}
+function Test-PartOfDomain($computerName, $domain){
+	$computerSystem = gwmi win32_computersystem
+	return ($computerSystem.Name -eq $computerName) -and ($computerSystem.PartOfDomain) -and ($computerSystem.Domain -eq $domain) 
+}
+
+function Test-JoinedToADomain(){
+	$computerSystem = gwmi win32_computersystem
+	return $computerSystem.PartOfDomain
+}
+
+function Repair-OpenSSHPasswd(){
+	$passwdPath = 'C:\Program Files\OpenSSH\etc\passwd'
+	$mkpasswdPath = 'C:\Program Files\OpenSSH\bin\mkpasswd.exe'
+	if ((Test-Path $passwdPath) -and (Test-Path $mkpasswdPath)){
+		$passwd = &$mkpasswdPath
+		$passwd = $passwd -replace '^([^+]*\+)', ''
+		$passwd | Set-Content $passwdPath -Encoding Ascii
 	}
 }
+
+$computerName='<%= options[:computer_name] %>'
+<% if options[:username] != nil && options[:unsecure] != true %>
+$domain='<%= options[:domain] %>'
+$username='<%= options[:username] %>'
+$password='<%= options[:password] %>'
+$secpasswd = ConvertTo-SecureString $password -AsPlainText -Force
+$credentials = New-Object System.Management.Automation.PSCredential ($username, $secpasswd)
 <% end %>
+<% if options[:add_to_domain] === true %>
+if (Test-PartOfDomain -computerName $computerName -domain $domain){
+	throw "$computerName already part of domain $domain"
+} else {
+	Add-Computer <%= options[:parameters] %> -Verbose -Force -PassThru
+	
+	# Rename computer separately: Fixes GH issue #11
+	<% if options[:rename_trigger] === true %>
+	$completed = $false
+	while ( -not $completed) {
+		try {
+			Rename-Computer <%= options_rename[:parameters] %> -Verbose -Force -ErrorAction Stop
+			$completed = $true
+		} catch {
+			if ($retrycount -ge 5) {
+				Write-Host ("Rename failed the maximum number of $retrycount times.")
+				throw
+			} else {
+				Write-Host ("Rename failed, Retrying in 5 seconds...")
+				Start-sleep -s 5
+				$retrycount++
+			}
+		}
+	}
+	<% end %>	
+	
+	Repair-OpenSSHPasswd
+
+	# Fix vagrant-windows GH-129, if there's an existing scheduled
+	# reboot cancel it so shutdown succeeds
+	&shutdown /a
+
+	# Force shutdown the machine now
+	&shutdown /s /t 15 /c "Vagrant Halt" /f /d p:4:1	
+}
 <% else %>
-Remove-Computer <%= options[:parameters] %> -Workgroup "WORKGROUP" -Verbose -Force
+if (!(Test-JoinedToADomain)) {
+	Throw "$computerName not part of any domain"
+} else {
+	Remove-Computer <%= options[:parameters] %> -Workgroup 'WORKGROUP' -Verbose -Force -PassThru
+	Repair-OpenSSHPasswd
+
+	# Fix vagrant-windows GH-129, if there's an existing scheduled
+	# reboot cancel it so shutdown succeeds
+	&shutdown /a
+
+	# Force shutdown the machine now
+	&shutdown /s /t 15 /c "Vagrant Halt" /f /d p:4:1
+}
 <% end %>

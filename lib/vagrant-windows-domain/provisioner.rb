@@ -47,22 +47,68 @@ module VagrantPlugins
         raise WindowsDomainError, :unsupported_platform if !windows?
       end
 
+
+      def is_part_of_domain(computer_name, domain)
+        command = <<-EOH
+          function Test-PartOfDomain($computerName, $domain){
+            $computerSystem = gwmi win32_computersystem
+            $partofDomain = ($computerSystem.Name -eq $computerName) -and ($computerSystem.PartOfDomain) -and ($computerSystem.Domain -eq $domain) 
+
+            if ($partofDomain) {
+              exit 0
+            } else {
+              exit 1
+            }
+          }
+          Test-PartOfDomain -computerName '#{computer_name}' -domain '#{domain}'
+        EOH
+        @machine.communicate.test(command, sudo: true)
+      end
+
+      def is_joined_to_domain()
+        command = <<-EOH
+          function Test-JoinedToADomain(){
+            $computerSystem = gwmi win32_computersystem
+            $partOfDomain = $computerSystem.PartOfDomain
+            if ($partofDomain) {
+              exit 0
+            } else {
+              exit 1
+            }
+          }
+          Test-JoinedToADomain
+        EOH
+        @machine.communicate.test(command, sudo: true)
+      end
+
+
       # Run the Provisioner!
       def provision
         verify_guest_capability
 
         @old_computer_name = get_guest_computer_name(machine)
-        
-        @machine.env.ui.say(:info, "Connecting guest machine to domain '#{config.domain}' with computer name '#{config.computer_name}'")
 
-        set_credentials
-
-        result = join_domain
-
-        remove_command_runner_script
+        result = is_part_of_domain(config.computer_name, config.domain)
 
         if result
-          restart_guest
+          @machine.env.ui.say(:info, "Guest machine with computer name '#{config.computer_name}' is already a member of domain '#{config.domain}'")
+        else
+          @machine.env.ui.say(:info, "Connecting guest machine to domain '#{config.domain}' with computer name '#{config.computer_name}'")
+
+          set_credentials
+
+          result = join_domain
+
+          remove_command_runner_script
+
+          if result
+            #Often requires 2 reboots to ensure that all AD stuff has been applied
+            @logger.debug("Need to reboot to join the domain correctly - 1st reboot")
+            restart_guest
+
+            @logger.debug("Need to reboot to join the domain correctly - 2nd reboot")
+            restart_guest
+          end
         end
       end
 
@@ -89,6 +135,8 @@ module VagrantPlugins
         if (config.username == nil)
           @logger.info("==> Requesting username as none provided")
           config.username = @machine.env.ui.ask("Please enter your domain username: ")
+        else
+          @logger.info("==> Using domain username: #{config.username}")
         end
 
         if (config.password == nil)
@@ -104,9 +152,13 @@ module VagrantPlugins
       # to be cleaned up.
       def destroy
         if @config && @config.domain != nil
-          set_credentials
-          if leave_domain
-            restart_guest
+          if is_joined_to_domain()
+            set_credentials
+            result = leave_domain
+            if result
+              @logger.debug("Need to reboot to leave the domain correctly")
+              restart_guest
+            end
           end
         else
           @logger.debug("Not leaving domain on `destroy` action - no valid configuration detected")
@@ -119,10 +171,14 @@ module VagrantPlugins
         @machine.env.ui.say(:info, "Restarting computer for updates to take effect.")
         options = {}
         options[:provision_ignore_sentinel] = false
+        options[:lock] = false
         @machine.action(:reload, options)
-        begin
-          sleep @restart_sleep_duration
-        end until @machine.communicate.ready?
+
+        Timeout.timeout(@machine.config.vm.boot_timeout) do
+          begin
+            sleep 5
+          end until @machine.communicate.ready?
+        end
       end
 
       # Verify that we can call the remote operations.
@@ -158,6 +214,8 @@ module VagrantPlugins
             username: @config.username,
             password: @config.password,
             domain: @config.domain,
+            computer_name: @config.computer_name,
+            ou_path: @config.ou_path,
             add_to_domain: add_to_domain,
             unsecure: @config.unsecure,
             rename_trigger: @config.rename_trigger,
@@ -196,6 +254,12 @@ module VagrantPlugins
           if @config.ou_path
             params["-OUPath"] = "'#{@config.ou_path}'"
           end
+
+          # Remove with unsecure
+          join_params = @config.join_options.map { |a| "#{a}" }.join(',')
+          if join_params.to_s != ''
+            params["-Options"] = join_params
+          end
         else
           params = {}
           if !@config.unsecure
@@ -203,10 +267,7 @@ module VagrantPlugins
           end
         end
 
-        # Remove with unsecure
-        join_params = @config.join_options.map { |a| "#{a}" }.join(',')
-        params.map { |k,v| "#{k}" + (!v.nil? ? " #{v}": '') }.join(' ') + join_params
-        
+        params.map { |k,v| "#{k}" + (!v.nil? ? " #{v}": '') }.join(' ')
       end
 
       # Writes the PowerShell runner script to a location on the guest.
