@@ -2,7 +2,8 @@ language: ruby
 before_install:
 - rvm @global do gem uninstall bundler --all --executables
 - gem uninstall bundler --all --executables
-- gem install bundler --version '< 1.12.5'
+- gem install bundler --version 1.12.5
+- gem install bundler --version 1.12.5
 rvm:
 - 2.2.3
 - 2.3.0
@@ -16,4 +17,4 @@ env:
   - VAGRANT_VERSION=v1.8.0
   global:
     secure: bs4ezY+1Wksy8hH3nymPJ3AL99mpXULVc/AIh16JetEYw1850QkX7r4gQukMlcyByKUhxucjDLid0Y+KDH5kGMM16QjrVQGhAnUQzMoLD2qPbAaxDCUqpCJtFEEQKYxJvFvEK8a5SQzAsTVG4sgABQ/MllsIIH0FjkWgFtH6050=
-script: bundle exec rake test:unit
+script: bundle _1.12.5_ exec rake test:unit
