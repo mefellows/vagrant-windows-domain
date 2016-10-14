@@ -149,6 +149,10 @@ module VagrantPlugins
       def generate_command_runner_script(add_to_domain=true)
         path = File.expand_path("../templates/runner.ps1", __FILE__)
 
+        if @config.computer_name != nil && @old_computer_name != nil && @config.computer_name.casecmp(@old_computer_name) != 0
+          @config.rename_trigger = true
+        end
+        
         Vagrant::Util::TemplateRenderer.render(path, options: {
             config: @config,
             username: @config.username,
@@ -156,10 +160,23 @@ module VagrantPlugins
             domain: @config.domain,
             add_to_domain: add_to_domain,
             unsecure: @config.unsecure,
+            rename_trigger: @config.rename_trigger,
             parameters: generate_command_arguments(add_to_domain)
+        }, options_rename: {
+            parameters: generate_command_arguments_rename
         })
       end
 
+      # Generates the argument list for rename 
+      def generate_command_arguments_rename
+
+        params = {"-NewName" => @config.computer_name}
+        params["-DomainCredential $credentials"] = nil
+        join_params = @config.join_options.map { |a| "#{a}" }.join(',')
+        params.map { |k,v| "#{k}" + (!v.nil? ? " #{v}": '') }.join(' ') + join_params
+        
+      end
+      
       # Generates the argument list
       def generate_command_arguments(add_to_domain=true)
 

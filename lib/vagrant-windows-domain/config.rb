@@ -45,6 +45,9 @@ module VagrantPlugins
       # When this option is used username/password are not required
       attr_accessor :unsecure
 
+      # The trigger whether plugin should rename the computer or omit the renaming
+      attr_accessor :rename_trigger
+
       def initialize
         super
         @domain            = UNSET_VALUE
@@ -54,6 +57,7 @@ module VagrantPlugins
         @join_options      = {}
         @ou_path           = UNSET_VALUE
         @unsecure          = UNSET_VALUE
+        @rename_trigger    = UNSET_VALUE
         @logger            = Log4r::Logger.new("vagrant::vagrant_windows_domain")
       end
 
@@ -72,6 +76,7 @@ module VagrantPlugins
         @join_options      = [] if @join_options == UNSET_VALUE
         @ou_path           = nil if @ou_path == UNSET_VALUE
         @unsecure          = false if @unsecure == UNSET_VALUE
+        @rename_trigger    = false if @rename_trigger == UNSET_VALUE
       end
 
       # Validate configuration and return a hash of errors.
