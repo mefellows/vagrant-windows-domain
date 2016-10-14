@@ -136,7 +136,7 @@ module VagrantPlugins
           @logger.info("==> Requesting username as none provided")
           config.username = @machine.env.ui.ask("Please enter your domain username: ")
         else
-          @logger.info("==> Using username: #{config.username}")
+          @logger.info("==> Using domain username: #{config.username}")
         end
 
         if (config.password == nil)
@@ -152,8 +152,8 @@ module VagrantPlugins
       # to be cleaned up.
       def destroy
         if @config && @config.domain != nil
-          set_credentials
           if is_joined_to_domain()
+            set_credentials
             result = leave_domain
             if result
               @logger.debug("Need to reboot to leave the domain correctly")
