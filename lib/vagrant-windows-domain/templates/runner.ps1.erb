@@ -73,6 +73,6 @@ if (!(Test-JoinedToADomain)) {
 	&shutdown /a
 
 	# Force shutdown the machine now
-	&shutdown /s /t 15 /c "Vagrant Halt" /f /d p:4:1
+	&shutdown /r /t 15 /c "Vagrant Halt" /f /d p:4:1
 }
 <% end %>
