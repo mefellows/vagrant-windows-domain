@@ -204,10 +204,8 @@ module VagrantPlugins
       def generate_command_runner_script(add_to_domain=true)
         path = File.expand_path("../templates/runner.ps1", __FILE__)
 
-        if @config.computer_name != nil && @old_computer_name != nil && @config.computer_name.casecmp(@old_computer_name) != 0
-          @config.rename = true
-        end
-        
+        @config.rename = (@config.computer_name != nil && @old_computer_name != nil && @config.computer_name.casecmp(@old_computer_name) != 0)
+
         Vagrant::Util::TemplateRenderer.render(path, options: {
             config: @config,
             username: @config.username,
@@ -246,7 +244,7 @@ module VagrantPlugins
             params["-Credential $credentials"] = nil
           end
 
-          if @config.computer_name != nil && @config.computer_name != @old_computer_name
+          if @config.computer_name != nil && @config.computer_name.casecmp(@old_computer_name) != 0
             params["-NewName"] = "'#{@config.computer_name}'"
           end
 

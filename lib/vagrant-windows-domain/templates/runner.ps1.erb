@@ -24,7 +24,7 @@ $domain='<%= options[:domain] %>'
 $username='<%= options[:username] %>'
 $password='<%= options[:password] %>'
 $secpasswd = ConvertTo-SecureString $password -AsPlainText -Force
-$credentials = New-Object System.Management.Automation.PSCredential ($username, $secpasswd)
+$credentials = New-Object System.Management.Automation.PSCredential ("$domain\$username", $secpasswd)
 <% end %>
 <% if options[:add_to_domain] === true %>
 if (Test-PartOfDomain -computerName $computerName -domain $domain){
@@ -56,7 +56,7 @@ if (Test-PartOfDomain -computerName $computerName -domain $domain){
 
 	# Fix vagrant-windows GH-129, if there's an existing scheduled
 	# reboot cancel it so shutdown succeeds
-	&shutdown /a
+	Start-Process -Filepath shutdown.exe -Argumentlist "/a" -Wait
 
 	# Force shutdown the machine now
 	&shutdown /s /t 15 /c "Vagrant Halt" /f /d p:4:1	
@@ -70,7 +70,7 @@ if (!(Test-JoinedToADomain)) {
 
 	# Fix vagrant-windows GH-129, if there's an existing scheduled
 	# reboot cancel it so shutdown succeeds
-	&shutdown /a
+	Start-Process -Filepath shutdown.exe -Argumentlist "/a" -Wait
 
 	# Force shutdown the machine now
 	&shutdown /r /t 15 /c "Vagrant Halt" /f /d p:4:1
