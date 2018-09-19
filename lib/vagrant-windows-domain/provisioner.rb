@@ -215,6 +215,8 @@ module VagrantPlugins
             domain: @config.domain,
             computer_name: @config.computer_name,
             ou_path: @config.ou_path,
+            primary_dns: @config.primary_dns,
+            secondary_dns: @config.secondary_dns,
             add_to_domain: add_to_domain,
             unsecure: @config.unsecure,
             rename: @config.rename,
@@ -244,10 +246,6 @@ module VagrantPlugins
             params["-Unsecure"] = nil
           else
             params["-Credential $credentials"] = nil
-          end
-
-          if @config.computer_name != nil && @config.computer_name != @old_computer_name
-            params["-NewName"] = "'#{@config.computer_name}'"
           end
 
           if @config.ou_path
