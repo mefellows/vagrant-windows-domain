@@ -40,6 +40,16 @@ module VagrantPlugins
       # The default value is the default OU for machine objects in the domain.
       attr_accessor :ou_path
 
+      # IP address of primary DNS server
+      #
+      # Specifies the IP address you want assigned as the primary DNS server for the primary nic
+      attr_accessor :primary_dns
+
+      #IP address of the secondary DNS server
+      #
+      # Specifies the IP address you want assigned as the secondary DNS server for the primary nic
+      attr_accessor :secondary_dns
+
       # Performs an unsecure join to the specified domain.
       #
       # When this option is used username/password are not required
@@ -56,6 +66,8 @@ module VagrantPlugins
         @password          = UNSET_VALUE
         @join_options      = {}
         @ou_path           = UNSET_VALUE
+        @primary_dns       = UNSET_VALUE
+        @secondary_dns     = UNSET_VALUE
         @unsecure          = UNSET_VALUE
         @rename            = UNSET_VALUE
         @logger            = Log4r::Logger.new("vagrant::vagrant_windows_domain")
@@ -75,6 +87,8 @@ module VagrantPlugins
         @password          = nil if @password == UNSET_VALUE || @password == ""
         @join_options      = [] if @join_options == UNSET_VALUE
         @ou_path           = nil if @ou_path == UNSET_VALUE
+        @primary_dns       = nil if @primary_dns == UNSET_VALUE
+        @secondary_dns     = nil if @secondary_dns == UNSET_VALUE
         @unsecure          = false if @unsecure == UNSET_VALUE
         @rename            = true if @rename == UNSET_VALUE
       end
