@@ -17,8 +17,11 @@ function Repair-OpenSSHPasswd(){
 		$passwd | Set-Content $passwdPath -Encoding Ascii
 	}
 }
-
+<% if options[:computer_name] != nil %>
 $computerName='<%= options[:computer_name] %>'
+<% else %>
+$computerName = $env:COMPUTERNAME
+<% end %>
 <% if options[:username] != nil && options[:unsecure] != true %>
 $domain='<%= options[:domain] %>'
 $username='<%= options[:username] %>'
@@ -63,7 +66,7 @@ if (Test-PartOfDomain -computerName $computerName -domain $domain){
 	Add-Computer <%= options[:parameters] %> -Verbose -Force -PassThru
 
 	# Rename computer separately: Fixes GH issue #11
-	<% if options[:rename] === true %>
+	<% if options[:computer_name] != nil %>
 	$completed = $false
 	while ( -not $completed) {
 		try {
@@ -86,7 +89,7 @@ if (Test-PartOfDomain -computerName $computerName -domain $domain){
 
 	# Fix vagrant-windows GH-129, if there's an existing scheduled
 	# reboot cancel it so shutdown succeeds
-	&shutdown /a
+	#&shutdown /a
 
 	# Force shutdown the machine now
 	&shutdown /r /t 0 /c "Vagrant Halt" /f /d p:4:1	
