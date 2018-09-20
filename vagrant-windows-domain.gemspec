@@ -25,5 +25,4 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "rspec-expectations", '~> 3.4.0', '>= 3.4.0'
   spec.add_development_dependency "rspec-mocks", '~> 3.4.1', '>= 3.4.1'
   spec.add_development_dependency "rspec-its", "~> 1.2.0", '>= 1.2.0'
-  spec.add_development_dependency "vagrant-spec", "~> 0.0.1", '>= 0.0.1'
 end

@@ -199,7 +199,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       expect(machine).to receive(:action). with(:reload, {:provision_ignore_sentinel=>false, :lock=>false})
       expect(ui).to_not receive(:say)
       expect(ui).to_not receive(:ask)
-      expect(communicator).to receive(:ready?).and_return(true)
+      expect(communicator).to_not receive(:ready?)
       subject.restart_sleep_duration = 0      
 
       subject.destroy
