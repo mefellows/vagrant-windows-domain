@@ -107,7 +107,7 @@ module VagrantPlugins
             restart_guest
 
             @logger.debug("Need to reboot to join the domain correctly - 2nd reboot")
-            restart_guest
+            #restart_guest
           end
         end
       end
@@ -157,7 +157,7 @@ module VagrantPlugins
             result = leave_domain
             if result
               @logger.debug("Need to reboot to leave the domain correctly")
-              restart_guest
+              #restart_guest
             end
           end
         else

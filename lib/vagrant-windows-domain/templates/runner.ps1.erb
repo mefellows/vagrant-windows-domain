@@ -29,6 +29,7 @@ $password='<%= options[:password] %>'
 $secpasswd = ConvertTo-SecureString $password -AsPlainText -Force
 $credentials = New-Object System.Management.Automation.PSCredential ($username, $secpasswd)
 <% end %>
+
 <% if options[:add_to_domain] === true %>
 if (Test-PartOfDomain -computerName $computerName -domain $domain){
 	throw "$computerName already part of domain $domain"
@@ -62,7 +63,7 @@ if (Test-PartOfDomain -computerName $computerName -domain $domain){
 			throw "Invalid IP address provided"
 		}
 	<% end %>
-
+	Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory private
 	Add-Computer <%= options[:parameters] %> -Verbose -Force -PassThru
 
 	# Rename computer separately: Fixes GH issue #11
@@ -92,7 +93,7 @@ if (Test-PartOfDomain -computerName $computerName -domain $domain){
 	#&shutdown /a
 
 	# Force shutdown the machine now
-	&shutdown /r /t 0 /c "Vagrant Halt" /f /d p:4:1	
+	#&shutdown /r /t 0 /c "Vagrant Halt" /f /d p:4:1
 }
 <% else %>
 if (!(Test-JoinedToADomain)) {
@@ -106,6 +107,6 @@ if (!(Test-JoinedToADomain)) {
 	#&shutdown /a
 
 	# Force shutdown the machine now
-	&shutdown /r /t 0 /c "Vagrant Halt" /f /d p:4:1
+	#&shutdown /r /t 0 /c "Vagrant Halt" /f /d p:4:1
 }
 <% end %>
