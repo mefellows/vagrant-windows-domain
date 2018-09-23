@@ -74,7 +74,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       allow(communicator).to receive(:upload)
       allow(ui).to receive(:info)
       expect(communicator).to receive(:test)
-      expect(vm).to receive(:boot_timeout).twice
+      expect(vm).to receive(:boot_timeout).once
       expect(communicator).to receive(:sudo).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1", {:elevated=>true, :error_check=>true, :error_key=>nil, :good_exit=>0, :shell=>:powershell})
       expect(communicator).to receive(:sudo).with("del c:/tmp/vagrant-windows-domain-runner.ps1")
       expect(machine).to receive(:action).with(:reload, {:provision_ignore_sentinel=>false, :lock=>false}).once
@@ -195,7 +195,6 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       expect(communicator).to receive(:sudo).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1", {:elevated=>true, :error_check=>true, :error_key=>nil, :good_exit=>0, :shell=>:powershell}).and_yield(:stdout, "deleted")
       expect(ui).to receive(:info).with("\"Running Windows Domain Provisioner\"")
       expect(ui).to receive(:info).with("deleted", {:color=>:green, :new_line=>false, :prefix=>false})
-      expect(ui).to receive(:say).with(:info, "Restarting computer for updates to take effect.")
 
       subject.destroy
     end
@@ -222,7 +221,6 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       expect(ui).to receive(:info).with(any_args).twice
       expect(ui).to receive(:ask).with("Please enter your domain password (output will be hidden): ", {:echo=>false}).and_return("myusername")
       expect(ui).to receive(:ask).with("Please enter your domain username: ")
-      expect(ui).to receive(:say).with(:info, "Restarting computer for updates to take effect.")
       subject.destroy
     end
 
