@@ -20,9 +20,9 @@ Gem::Specification.new do |spec|
 
   spec.add_development_dependency "rake"
   spec.add_development_dependency "bundler"
-  spec.add_development_dependency "coveralls", "~> 0.8.10", '>= 0.8.10'
-  spec.add_development_dependency "rspec-core", '~> 3.4.2', '>= 3.4.2'
-  spec.add_development_dependency "rspec-expectations", '~> 3.4.0', '>= 3.4.0'
-  spec.add_development_dependency "rspec-mocks", '~> 3.4.1', '>= 3.4.1'
-  spec.add_development_dependency "rspec-its", "~> 1.2.0", '>= 1.2.0'
+  spec.add_development_dependency "coveralls"
+  spec.add_development_dependency "rspec-core"
+  spec.add_development_dependency "rspec-expectations"
+  spec.add_development_dependency "rspec-mocks"
+  spec.add_development_dependency "rspec-its"
 end
