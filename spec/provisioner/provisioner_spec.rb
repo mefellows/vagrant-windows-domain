@@ -190,7 +190,6 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
     it "should leave domain when a `vagrant destroy` is issued" do
       allow(machine).to receive(:communicate).and_return(communicator)
       expect(communicator).to receive(:test).and_return(true)
-      expect(vm).to receive(:boot_timeout)
       expect(communicator).to receive(:upload)
       expect(communicator).to receive(:sudo).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1", {:elevated=>true, :error_check=>true, :error_key=>nil, :good_exit=>0, :shell=>:powershell}).and_yield(:stdout, "deleted")
       expect(ui).to receive(:info).with("\"Running Windows Domain Provisioner\"")
@@ -214,7 +213,6 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       allow(machine).to receive(:communicate).and_return(communicator)
       allow(machine).to receive(:env).and_return(env)
 
-      expect(vm).to receive(:boot_timeout)
       expect(communicator).to receive(:test).and_return(true)
       expect(communicator).to receive(:upload)
       expect(communicator).to receive(:sudo).with("powershell -ExecutionPolicy Bypass -OutputFormat Text -file c:/tmp/vagrant-windows-domain-runner.ps1", {:elevated=>true, :error_check=>true, :error_key=>nil, :good_exit=>0, :shell=>:powershell}).and_yield(:stdout, "deleted")
