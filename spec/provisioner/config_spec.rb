@@ -37,8 +37,6 @@ describe VagrantPlugins::WindowsDomain::Config do
     its("username")          { should be_nil }
     its("password")          { should be_nil }
     its("join_options")      { should eq({})   }
-	its("primary_dns")		 { should be_nil }
-	its("secondary_dns")	 { should be_nil }
     its("ou_path")           { should be_nil }
     its("unsecure")          { should eq(false) }
 
@@ -47,8 +45,6 @@ describe VagrantPlugins::WindowsDomain::Config do
       subject.username = ""
       subject.password = ""
       subject.computer_name = ""
-      subject.primary_dns = ""
-      subject.secondary_dns = ""
       
       subject.finalize!
 
@@ -56,8 +52,6 @@ describe VagrantPlugins::WindowsDomain::Config do
       expect(subject.computer_name).to be_nil
       expect(subject.username).to be_nil
       expect(subject.password).to be_nil
-	  expect(subject.primary_dns).to be_nil
-	  expect(subject.secondary_dns).to be_nil
 	  
     end
   end
