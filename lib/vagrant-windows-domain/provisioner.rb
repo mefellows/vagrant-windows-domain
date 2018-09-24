@@ -107,7 +107,7 @@ module VagrantPlugins
             restart_guest
 
             @logger.debug("Need to reboot to join the domain correctly - 2nd reboot")
-            restart_guest
+            #restart_guest
           end
         end
       end
@@ -157,7 +157,7 @@ module VagrantPlugins
             result = leave_domain
             if result
               @logger.debug("Need to reboot to leave the domain correctly")
-              restart_guest
+              #restart_guest
             end
           end
         else
@@ -215,6 +215,8 @@ module VagrantPlugins
             domain: @config.domain,
             computer_name: @config.computer_name,
             ou_path: @config.ou_path,
+            primary_dns: @config.primary_dns,
+            secondary_dns: @config.secondary_dns,
             add_to_domain: add_to_domain,
             unsecure: @config.unsecure,
             rename: @config.rename,
@@ -244,10 +246,6 @@ module VagrantPlugins
             params["-Unsecure"] = nil
           else
             params["-Credential $credentials"] = nil
-          end
-
-          if @config.computer_name != nil && @config.computer_name != @old_computer_name
-            params["-NewName"] = "'#{@config.computer_name}'"
           end
 
           if @config.ou_path

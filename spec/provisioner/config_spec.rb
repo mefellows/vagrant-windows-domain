@@ -52,6 +52,7 @@ describe VagrantPlugins::WindowsDomain::Config do
       expect(subject.computer_name).to be_nil
       expect(subject.username).to be_nil
       expect(subject.password).to be_nil
+	  
     end
   end
 

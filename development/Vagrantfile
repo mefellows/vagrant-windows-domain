@@ -13,7 +13,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.box = "mfellows/windows2012r2"
   config.vm.guest = :windows
   config.vm.communicator = "winrm"
-  config.vm.network :forwarded_port, guest: 5985, host: 5985, id: "winrm", auto_correct: true
+  #ALlows for vagrant to successfully connect to destination machine with winrm 
+  config.vm.network :forwarded_port, guest: 5985, host: 55985 #, id: "winrm", auto_correct: true
 
   config.vm.provider "virtualbox" do |v| 
     v.gui = true 

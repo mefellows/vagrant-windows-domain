@@ -47,6 +47,18 @@ config.vm.provision :windows_domain do |domain|
     # If not supplied the plugin will prompt the user during provisioning to provide one.
     domain.password = "iprobablyshouldntusethisfield"
 
+    # IP address of primary DNS server
+    #
+    # Specifies the IP address you want assigned as the primary DNS server for the primary nic.
+    # If not supplied, the nic's primary dns server will be assigned dynamically.
+    domain.primary_dns = "8.8.8.8"
+    
+    #IP address of the secondary DNS server
+    #
+    # Specifies the IP address you want assigned as the secondary DNS server for the primary nic
+    # If not supplied, the nic's secondary dns server will be assigned dynamically.
+	domain.secondary_dns = "8.8.4.4"
+
     # The set of Advanced options to pass when joining the Domain.
     #
     # See (https://technet.microsoft.com/en-us/library/hh849798.aspx) for detail, these are generally not required.
