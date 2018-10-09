@@ -19,43 +19,6 @@ function Repair-OpenSSHPasswd(){
 }
 function New-ADSIPrincipalContext
 {
-<#
-.SYNOPSIS
-	Function to create an Active Directory PrincipalContext object
-
-.DESCRIPTION
-	Function to create an Active Directory PrincipalContext object
-
-.PARAMETER Credential
-	Specifies the alternative credentials to use.
-	It will use the current credential if not specified.
-
-.PARAMETER ContextType
-	Specifies which type of Context to use. Domain, Machine or ApplicationDirectory.
-
-.PARAMETER DomainName
-	Specifies the domain to query. Default is the current domain.
-	Should only be used with the Domain ContextType.
-
-.PARAMETER Container
-	Specifies the scope. Example: "OU=MyOU"
-
-.PARAMETER ContextOptions
-	Specifies the ContextOptions.
-	Negotiate
-	Sealing
-	SecureSocketLayer
-	ServerBind
-	Signing
-	SimpleBind
-
-.EXAMPLE
-	New-ADSIPrincipalContext -ContextType 'Domain'
-
-.EXAMPLE
-	New-ADSIPrincipalContext -ContextType 'Domain' -DomainName "Contoso.com" -Cred (Get-Credential)
-#>
-	
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	[OutputType('System.DirectoryServices.AccountManagement.PrincipalContext')]
 	PARAM
@@ -123,50 +86,6 @@ function New-ADSIPrincipalContext
 
 function Get-ADSIComputer
 {
-<#
-.SYNOPSIS
-	Function to retrieve a Computer in Active Directory
-
-.DESCRIPTION
-	Function to retrieve a Computer in Active Directory
-
-.PARAMETER Identity
-	Specifies the Identity of the computer
-		
-	You can provide one of the following:
-		DistinguishedName
-		Guid
-		Name
-		SamAccountName
-		Sid
-
-	System.DirectoryService.AccountManagement.IdentityType
-	https://msdn.microsoft.com/en-us/library/bb356425(v=vs.110).aspx
-
-.PARAMETER Credential
-	Specifies alternative credential
-	By default it will use the current user windows credentials.
-
-.PARAMETER DomainName
-	Specifies the alternative Domain.
-	By default it will use the current domain.
-
-.EXAMPLE
-	Get-ADSIComputer -Identity 'SERVER01'
-
-	This command will retrieve the computer account SERVER01
-
-.EXAMPLE
-	Get-ADSIComputer -Identity 'SERVER01' -Credential (Get-Credential)
-
-	This command will retrieve the computer account SERVER01 with the specified credential
-
-.EXAMPLE
-	$Comp = Get-ADSIComputer -Identity 'SERVER01'
-	$Comp.GetUnderlyingObject()| select-object *
-
-	Help you find all the extra properties
-#>
 	[CmdletBinding(DefaultParameterSetName="All")]
 	param ([Parameter(Mandatory=$true,ParameterSetName="Identity")]
 		[string]$Identity,
@@ -215,56 +134,6 @@ function Get-ADSIComputer
 
 function Remove-ADSIComputer
 {
-<#
-.SYNOPSIS
-	Function to Remove a Computer Account from a domain without needing to have the Remote server administration tools installed.  Also removes the 
-
-.DESCRIPTION
-	Function to Remove a Computer Account
-
-.PARAMETER Identity
-	Specifies the Identity of the Computer.
-
-	You can provide one of the following:
-		DistinguishedName
-		Guid
-		Name
-		SamAccountName
-		Sid
-
-.PARAMETER Credential
-	Specifies the alternative credential to use.
-	By default it will use the current user windows credentials.
-
-.PARAMETER DomainName
-	Specifies the alternative Domain.
-	By default it will use the current domain.
-
-.PARAMETER Recursive
-    Specifies that any child object should be deleted as well
-    Typically you would use this parameter if you get the error "The directory service can perform the requested operation only on a leaf object"
-    when you try to delete the object without the -recursive param
-
-.EXAMPLE
-	Remove-ADSIComputer -identity TESTSERVER01
-
-	This command will Remove the account TESTSERVER01
-
-.EXAMPLE
-	Remove-ADSIComputer -identity TESTSERVER01 -recursive
-
-	This command will Remove the account TESTSERVER01 and all the child leaf
-
-.EXAMPLE
-	Remove-ADSIComputer -identity TESTSERVER01 -whatif
-
-	This command will emulate removing the account TESTSERVER01
-
-.EXAMPLE
-	Remove-ADSIComputer -identity TESTSERVER01 -credential (Get-Credential)
-
-	This command will Remove the account TESTSERVER01 using the alternative credential specified
-#>
 	[CmdletBinding(SupportsShouldProcess = $true)]
 	PARAM (
 		[parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ValueFromPipeline = $true)]
