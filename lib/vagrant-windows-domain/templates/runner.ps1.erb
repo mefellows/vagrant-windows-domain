@@ -391,30 +391,15 @@ if (Test-PartOfDomain -computerName $computerName -domain $domain){
 	<% end %>	
 	
 	Repair-OpenSSHPasswd
-
-	# Fix vagrant-windows GH-129, if there's an existing scheduled
-	# reboot cancel it so shutdown succeeds
-	#&shutdown /a
-
-	# Force shutdown the machine now
-	#&shutdown /r /t 0 /c "Vagrant Halt" /f /d p:4:1
 }
 <% else %>
 if (!(Test-JoinedToADomain)) {
 	Throw "$computerName not part of any domain"
 } else {
-	#Remove-Computer <%= options[:parameters] %> -Workgroup 'WORKGROUP' -Verbose -Force -PassThru
 	#When destroying the vagrant machine, the goal is not as much to have the virtual machine disjoin from the domain, but to remove the computer object associated with the
 	#machine so that future runs of vagrant up will succeed (especially when the vagrantfile explicitly defines a computer name.  That being the case, the remove-computer
 	#command has been replaced with a custom function which is able to remove the computer object associated with the vagrant machine in active directory.
 	Remove-ADSIComputer -Identity $env:COMPUTERNAME -DomainName $domain -Credential $credentials -Verbose
 	Repair-OpenSSHPasswd
-	#removed the shutdown of the vm when disjoining it from the domain since, as the vm is about to be destroyed anyway, so there is no use for it.
-	# Fix vagrant-windows GH-129, if there's an existing scheduled
-	# reboot cancel it so shutdown succeeds
-	#&shutdown /a
-
-	# Force shutdown the machine now
-	#&shutdown /r /t 0 /c "Vagrant Halt" /f /d p:4:1
 }
 <% end %>
