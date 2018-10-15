@@ -17,6 +17,179 @@ function Repair-OpenSSHPasswd(){
 		$passwd | Set-Content $passwdPath -Encoding Ascii
 	}
 }
+function New-ADSIPrincipalContext
+{
+	[CmdletBinding(SupportsShouldProcess = $true)]
+	[OutputType('System.DirectoryServices.AccountManagement.PrincipalContext')]
+	PARAM
+	(
+		[Alias("RunAs")]
+		[System.Management.Automation.PSCredential]
+		[System.Management.Automation.Credential()]
+		$Credential = [System.Management.Automation.PSCredential]::Empty,
+		
+		[Parameter(Mandatory = $true)]
+		[System.DirectoryServices.AccountManagement.ContextType]$ContextType,
+		
+		$DomainName = [System.DirectoryServices.ActiveDirectory.Domain]::Getcurrentdomain(),
+		
+		$Container,
+		
+		[System.DirectoryServices.AccountManagement.ContextOptions[]]$ContextOptions
+	)
+	
+	BEGIN
+	{
+		$ScriptName = (Get-Variable -name MyInvocation -Scope 0 -ValueOnly).MyCommand
+		Write-Verbose -Message "[$ScriptName] Add Type System.DirectoryServices.AccountManagement"
+		Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+	}
+	PROCESS
+	{
+		TRY
+		{
+			switch ($ContextType)
+			{
+				"Domain" { $ArgumentList = $ContextType, $DomainName }
+				"Machine" { $ArgumentList = $ContextType, $ComputerName }
+				"ApplicationDirectory" { $ArgumentList = $ContextType }
+			}
+			
+			IF ($PSBoundParameters['Container'])
+			{
+				$ArgumentList += $Container
+			}
+			
+			IF ($PSBoundParameters['ContextOptions'])
+			{
+				$ArgumentList += $($ContextOptions)
+			}
+			
+			IF ($PSBoundParameters['Credential'])
+			{
+				# Query the specified domain or current if not entered, with the specified credentials
+				$ArgumentList += $($Credential.UserName), $($Credential.GetNetworkCredential().password)
+			}
+			
+			IF ($PSCmdlet.ShouldProcess($DomainName, "Create Principal Context"))
+			{
+				# Query 
+				New-Object -TypeName System.DirectoryServices.AccountManagement.PrincipalContext -ArgumentList $ArgumentList
+			}
+		} #TRY
+		CATCH
+		{
+			$PSCmdlet.ThrowTerminatingError($_)
+		}
+	} #PROCESS
+}
+
+function Get-ADSIComputer
+{
+	[CmdletBinding(DefaultParameterSetName="All")]
+	param ([Parameter(Mandatory=$true,ParameterSetName="Identity")]
+		[string]$Identity,
+		
+		[Alias("RunAs")]
+		[System.Management.Automation.PSCredential]
+		[System.Management.Automation.Credential()]
+		$Credential = [System.Management.Automation.PSCredential]::Empty,
+
+		[String]$DomainName
+	)
+	BEGIN
+	{
+        Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+		
+        # Create Context splatting
+        $ContextSplatting = @{ ContextType = "Domain" }
+		
+        IF ($PSBoundParameters['Credential']) { $ContextSplatting.Credential = $Credential }
+        IF ($PSBoundParameters['DomainName']) { $ContextSplatting.DomainName = $DomainName }
+		
+        $Context = New-ADSIPrincipalContext @ContextSplatting
+
+	}
+	PROCESS
+	{
+        TRY{
+            IF($Identity)
+            {
+                [System.DirectoryServices.AccountManagement.ComputerPrincipal]::FindByIdentity($Context, $Identity)
+            }
+            ELSE{
+                $ComputerPrincipal = New-object -TypeName System.DirectoryServices.AccountManagement.ComputerPrincipal -ArgumentList $Context
+			    $Searcher = new-object System.DirectoryServices.AccountManagement.PrincipalSearcher
+			    $Searcher.QueryFilter = $ComputerPrincipal
+
+                $Searcher.FindAll()
+            }
+        }
+        CATCH
+        {
+        	$pscmdlet.ThrowTerminatingError($_)
+        }
+	}
+}
+
+function Remove-ADSIComputer
+{
+	[CmdletBinding(SupportsShouldProcess = $true)]
+	PARAM (
+		[parameter(Mandatory = $true, ValueFromPipelineByPropertyName = $true, ValueFromPipeline = $true)]
+		$Identity,
+
+		[Alias("RunAs")]
+		[System.Management.Automation.PSCredential]
+		[System.Management.Automation.Credential()]
+		$Credential = [System.Management.Automation.PSCredential]::Empty,
+
+		[String]$DomainName,
+
+		[Switch]$Recursive
+	)
+	
+	BEGIN
+	{
+		Add-Type -AssemblyName System.DirectoryServices.AccountManagement
+		
+		# Create Context splatting
+		$ContextSplatting = @{ }
+		IF ($PSBoundParameters['Credential']) { $ContextSplatting.Credential = $Credential }
+		IF ($PSBoundParameters['DomainName']) { $ContextSplatting.DomainName = $DomainName }
+
+	}
+	PROCESS
+	{
+		TRY
+		{
+			# Not Recursive
+			if (-not $PSBoundParameters['Recursive'])
+			{
+				if ($pscmdlet.ShouldProcess("$Identity", "Remove Account"))
+				{
+					$Account = Get-ADSIComputer -Identity $Identity @ContextSplatting
+					$Account.delete()
+				}
+			}
+			
+			# Recursive (if the computer is the parent of one leaf or more)
+			if ($PSBoundParameters['Recursive'])
+			{
+				if ($pscmdlet.ShouldProcess("$Identity", "Remove Account and any child objects"))
+				{
+					$Account = Get-ADSIComputer -Identity $Identity @ContextSplatting
+					$Account.GetUnderlyingObject().deletetree()
+				}
+			}
+			
+		}
+		CATCH
+		{
+			$pscmdlet.ThrowTerminatingError($_)
+		}
+	}
+}
 <% if options[:computer_name] != nil %>
 $computerName='<%= options[:computer_name] %>'
 <% else %>
@@ -87,26 +260,15 @@ if (Test-PartOfDomain -computerName $computerName -domain $domain){
 	<% end %>	
 	
 	Repair-OpenSSHPasswd
-
-	# Fix vagrant-windows GH-129, if there's an existing scheduled
-	# reboot cancel it so shutdown succeeds
-	#&shutdown /a
-
-	# Force shutdown the machine now
-	#&shutdown /r /t 0 /c "Vagrant Halt" /f /d p:4:1
 }
 <% else %>
 if (!(Test-JoinedToADomain)) {
 	Throw "$computerName not part of any domain"
 } else {
-	Remove-Computer <%= options[:parameters] %> -Workgroup 'WORKGROUP' -Verbose -Force -PassThru
+	#When destroying the vagrant machine, the goal is not as much to have the virtual machine disjoin from the domain, but to remove the computer object associated with the
+	#machine so that future runs of vagrant up will succeed (especially when the vagrantfile explicitly defines a computer name.  That being the case, the remove-computer
+	#command has been replaced with a custom function which is able to remove the computer object associated with the vagrant machine in active directory.
+	Remove-ADSIComputer -Identity $env:COMPUTERNAME -DomainName $domain -Credential $credentials -Verbose
 	Repair-OpenSSHPasswd
-	#removed the shutdown of the vm when disjoining it from the domain since, as the vm is about to be destroyed anyway, so there is no use for it.
-	# Fix vagrant-windows GH-129, if there's an existing scheduled
-	# reboot cancel it so shutdown succeeds
-	#&shutdown /a
-
-	# Force shutdown the machine now
-	#&shutdown /r /t 0 /c "Vagrant Halt" /f /d p:4:1
 }
 <% end %>
