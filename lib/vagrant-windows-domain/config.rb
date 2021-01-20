@@ -87,10 +87,10 @@ module VagrantPlugins
         @password          = nil if @password == UNSET_VALUE || @password == ""
         @join_options      = [] if @join_options == UNSET_VALUE
         @ou_path           = nil if @ou_path == UNSET_VALUE
-        @primary_dns       = nil if @primary_dns == UNSET_VALUE
-        @secondary_dns     = nil if @secondary_dns == UNSET_VALUE
+        @primary_dns       = nil if @primary_dns == UNSET_VALUE || @primary_dns == ""
+        @secondary_dns     = nil if @secondary_dns == UNSET_VALUE || @secondary_dns == ""
         @unsecure          = false if @unsecure == UNSET_VALUE
-        @rename            = true if @rename == UNSET_VALUE
+        @rename            = false if @rename == UNSET_VALUE
       end
 
       # Validate configuration and return a hash of errors.
@@ -103,8 +103,12 @@ module VagrantPlugins
         errors = _detected_errors
 
         # Need to supply one of them!
-        if ( (@username != nil && @password != nil) && @unsecure == true)
+        if (@username != nil && @password != nil) && @unsecure == true
           errors << I18n.t("vagrant_windows_domain.errors.both_credentials_provided")
+        end
+
+        if @secondary_dns != nil && @primary_dns == nil
+          errors << I18n.t("vagrant_windows_domain.errors.invalid_dns_config")
         end
         
         { "windows domain provisioner" => errors }

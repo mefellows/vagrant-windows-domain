@@ -15,3 +15,5 @@ en:
         "The command '%{binary} required to join/remove the guest machine from the domain '%{domain}' was not found on the guest machine"
       absolute_module_path: |-
         "Absolute 'module_path' not allowed. Please provide a path relative to your Vagrantfile."
+      invalid_dns_config: |-
+        "Primary dns must be set before configuring Secondary DNS."

@@ -150,7 +150,7 @@ module VagrantPlugins
       # This is the method called when destroying a machine that allows
       # for any state related to the machine created by the provisioner
       # to be cleaned up.
-      def destroy
+      def cleanup
         if @config && @config.domain != nil
           if is_joined_to_domain()
             set_credentials
@@ -312,7 +312,7 @@ module VagrantPlugins
         last_type = nil
         new_line = ""
         error = false
-        machine.communicate.sudo("powershell -ExecutionPolicy Bypass -OutputFormat Text -file #{script_path}", opts) do |type, data|
+        exit_status = @machine.communicate.sudo("powershell -ExecutionPolicy Bypass -OutputFormat Text -file #{script_path}", opts) do |type, data|
           if !data.chomp.empty?
             error = true if type == :stderr
             if [:stderr, :stdout].include?(type)
