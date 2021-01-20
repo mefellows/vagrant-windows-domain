@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.email         = ["matt.fellows@onegeek.com.au"]
   spec.summary       = "Windows Domain Provisioner for Vagrant"
   spec.description   = "Adds and Removes Windows Guests from a Windows Domain, as part of the standard machine lifecycle."
-  spec.homepage      = "https://github.com/SEEK-Jobs/vagrant-windows-domain"
+  spec.homepage      = "https://github.com/mefellows/vagrant-windows-domain"
   spec.license       = "MIT"
 
   spec.files         = `git ls-files -z`.split("\x0")
