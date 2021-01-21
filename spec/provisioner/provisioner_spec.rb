@@ -195,7 +195,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       expect(ui).to receive(:info).with("\"Running Windows Domain Provisioner\"")
       expect(ui).to receive(:info).with("deleted", {:color=>:green, :new_line=>false, :prefix=>false})
 
-      subject.destroy
+      subject.cleanup
     end
 
     it "should not leave domain plugin not associated with current Vagrantfile" do
@@ -204,7 +204,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       subject = described_class.new machine, double("env", :domain => nil)
 
       expect(ui).to_not receive(:ask)
-      expect(subject.destroy).to eq(nil)
+      expect(subject.cleanup).to eq(nil)
     end
 
     it "should ask for credentials when leaving domain when no credentials were provided" do
@@ -219,7 +219,7 @@ describe VagrantPlugins::WindowsDomain::Provisioner do
       expect(ui).to receive(:info).with(any_args).twice
       expect(ui).to receive(:ask).with("Please enter your domain password (output will be hidden): ", {:echo=>false}).and_return("myusername")
       expect(ui).to receive(:ask).with("Please enter your domain username: ")
-      subject.destroy
+      subject.cleanup
     end
 
   end
