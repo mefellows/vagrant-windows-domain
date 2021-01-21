@@ -75,7 +75,7 @@ module VagrantPlugins
 
       # Final step of the Configuration lifecyle prior to
       # validation.
-      #
+      # 
       # Ensures all attributes are set to defaults if not provided.
       def finalize!
         super
