@@ -2,6 +2,12 @@ language: ruby
 before_install:
 - gem update --system
 - gem install bundler
+- gem install rake
+- gem install coveralls
+- gem install rspec-core
+- gem install rspec-expectations
+- gem install rspec-mocks
+- gem install rspec-its
 rvm:
 - 3.0.0
 - ruby-head
