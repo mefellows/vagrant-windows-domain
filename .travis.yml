@@ -2,14 +2,7 @@ language: ruby
 before_install:
 - gem update --system
 - gem install bundler
-- gem install rake
-- gem install coveralls
-- gem install rspec-core
-- gem install rspec-expectations
-- gem install rspec-mocks
-- gem install rspec-its
 rvm:
-- 3.0.0
 - ruby-head
 - 2.5.1
 - 2.4.4
@@ -18,6 +11,8 @@ matrix:
   - rvm: ruby-head
   fast_finish: true
 env:
+  matrix:
+  - VAGRANT_VERSION=v2.1.5
   global:
     secure: bs4ezY+1Wksy8hH3nymPJ3AL99mpXULVc/AIh16JetEYw1850QkX7r4gQukMlcyByKUhxucjDLid0Y+KDH5kGMM16QjrVQGhAnUQzMoLD2qPbAaxDCUqpCJtFEEQKYxJvFvEK8a5SQzAsTVG4sgABQ/MllsIIH0FjkWgFtH6050=
 script: bundle exec rake test:unit
