@@ -190,6 +190,14 @@ function Remove-ADSIComputer
 		}
 	}
 }
+try
+{
+	Get-NetConnectionProfile -ErrorAction Stop | Set-NetConnectionProfile -NetworkCategory private -ErrorAction Stop
+}
+catch
+{
+	Write-host "Network adapters already set to private network type"
+}
 <% if options[:computer_name] != nil %>
 $computerName='<%= options[:computer_name] %>'
 <% else %>
@@ -207,38 +215,34 @@ $credentials = New-Object System.Management.Automation.PSCredential ($username, 
 if (Test-PartOfDomain -computerName $computerName -domain $domain){
 	throw "$computerName already part of domain $domain"
 } else {
-	#If a value is provided for the Primary_DNS variable in the vagrantfile, powershell will attempt to determine if the string is a valid IP and will statically set the primary dns server of the vm's nic if it is.
+	#If a value is provided for the Primary_DNS and Secondary_DNS variable in the vagrantfile, powershell will determine if the string is a valid IP and will statically set the primary and secondary dns servers of the vm's nic if it is.  If only Primary_DNS variable is provided, powershell will statically set the primary dns server of the vm's nic while leaving the secondary unset.
 	<% if options[:primary_dns] != nil %>
+		$wmi = Get-WmiObject -ComputerName $env:COMPUTERNAME -Namespace "root\CIMV2" -Class "Win32_NetworkAdapterconfiguration" -Filter 'IPENABLED=TRUE AND Index=2' -Impersonation Impersonate -ErrorAction Stop | Where-Object { $_.DefaultIPGateway }
+		# $currdns = $wmi.DNSServerSearchOrder
 		$prim = '<%= options[:primary_dns] %>'
-		If ($prim -match "^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
-		{
-			$wmi = Get-WmiObject -ComputerName $env:COMPUTERNAME -Namespace "root\CIMV2" -Class "Win32_NetworkAdapterconfiguration" -Filter 'IPENABLED=TRUE' -Impersonation Impersonate -ErrorAction Stop | Where-Object { $_.DefaultIPGateway }
-			$currdns = $wmi.DNSServerSearchOrder
-			$wmi.SetDNSServerSearchOrder(@($prim, $currdns[1]))
-		}
-		else
-		{
-			throw "Invalid IP address provided"
-		}
+		# Modified the configuration so that the secondary dns can only be set if the primary dns server has also been set
+		<% if options[:secondary_dns] != nil %>
+			$sec = '<%= options[:secondary_dns] %>'
+			If (($prim -match "^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$") -and ($sec -match "^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$"))
+			{
+				$wmi.SetDNSServerSearchOrder(@("$prim", "$sec"))
+			}
+			else
+			{
+				throw "Invalid value provided for dns server ip"
+			}
+		<% else %>
+			If ($prim -match "^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
+			{
+				$wmi.SetDNSServerSearchOrder("$prim")
+			}
+			else
+			{
+				throw "Invalid IP address provided"
+			}
+		<% end %>
 	<% end %>
-
-	#If a value is provided for the Secondary_DNS variable in the vagrantfile, powershell will attempt to determine if the string is a valid IP and will statically set the secondary dns server of the vm's nic if it is.
-	<% if options[:secondary_dns] != nil %>
-		$sec = '<%= options[:secondary_dns] %>'
-		If ($sec -match "^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$")
-		{
-			$wmi = Get-WmiObject -ComputerName $env:COMPUTERNAME -Namespace "root\CIMV2" -Class "Win32_NetworkAdapterconfiguration" -Filter 'IPENABLED=TRUE' -Impersonation Impersonate -ErrorAction Stop | Where-Object { $_.DefaultIPGateway }
-			$currdns = $wmi.DNSServerSearchOrder
-			$wmi.SetDNSServerSearchOrder(@($currdns[0], $sec))
-		}
-		else
-		{
-			throw "Invalid IP address provided"
-		}
-	<% end %>
-	Get-NetConnectionProfile | Set-NetConnectionProfile -NetworkCategory private
-	Add-Computer <%= options[:parameters] %> -Verbose -Force -PassThru
-
+	Add-Computer <%= options[:parameters] %> -Verbose -Force
 	# Rename computer separately: Fixes GH issue #11
 	<% if options[:computer_name] != nil %>
 	$completed = $false
@@ -258,17 +262,26 @@ if (Test-PartOfDomain -computerName $computerName -domain $domain){
 		}
 	}
 	<% end %>	
-	
 	Repair-OpenSSHPasswd
 }
 <% else %>
-if (!(Test-JoinedToADomain)) {
-	Throw "$computerName not part of any domain"
+$compobj = Get-ADSIComputer -Identity $computerName -Credential $credentials -DomainName $domain
+if (!(Test-JoinedToADomain) -or !($compobj)) {
+	# Throw "$computerName not part of any domain"
+	return
 } else {
 	#When destroying the vagrant machine, the goal is not as much to have the virtual machine disjoin from the domain, but to remove the computer object associated with the
 	#machine so that future runs of vagrant up will succeed (especially when the vagrantfile explicitly defines a computer name.  That being the case, the remove-computer
 	#command has been replaced with a custom function which is able to remove the computer object associated with the vagrant machine in active directory.
-	Remove-ADSIComputer -Identity $env:COMPUTERNAME -DomainName $domain -Credential $credentials -Verbose
+	try
+	{
+	Remove-ADSIComputer -Identity $env:COMPUTERNAME -DomainName $domain -Credential $credentials -Verbose -ErrorAction Stop
 	Repair-OpenSSHPasswd
+	}
+	catch
+	{
+		Repair-OpenSSHPasswd
+	}
+	
 }
 <% end %>

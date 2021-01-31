@@ -24,10 +24,10 @@ module VagrantPlugins
         Provisioner
       end
 
-      action_hook(:windows_domain, :machine_action_destroy) do |hook|
-        require_relative 'action/leave_domain'
-        hook.prepend(VagrantPlugins::WindowsDomain::LeaveDomain)
-      end
+  #    action_hook(:windows_domain, :machine_action_destroy) do |hook|
+   #     require_relative 'action/leave_domain'
+   #     hook.prepend(VagrantPlugins::WindowsDomain::LeaveDomain)
+   #   end
     end
   end
 end

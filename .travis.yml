@@ -1,10 +1,11 @@
 language: ruby
 before_install:
+- gem update --system
 - gem install bundler
 rvm:
+- ruby-head
 - 2.5.1
 - 2.4.4
-- ruby-head
 matrix:
   allow_failures:
   - rvm: ruby-head
@@ -12,6 +13,4 @@ matrix:
 env:
   matrix:
   - VAGRANT_VERSION=v2.1.5
-  global:
-    secure: bs4ezY+1Wksy8hH3nymPJ3AL99mpXULVc/AIh16JetEYw1850QkX7r4gQukMlcyByKUhxucjDLid0Y+KDH5kGMM16QjrVQGhAnUQzMoLD2qPbAaxDCUqpCJtFEEQKYxJvFvEK8a5SQzAsTVG4sgABQ/MllsIIH0FjkWgFtH6050=
 script: bundle exec rake test:unit
